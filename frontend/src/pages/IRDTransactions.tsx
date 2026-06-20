@@ -28,6 +28,7 @@ declare global {
     __setIRDTxnValue?: (index: number, key: string, value: string) => void;
     __irdTxnReady?: boolean;
     __resumeAutomation?: () => void;
+    pauseForManualEntry?: () => Promise<void>;
   }
 }
 
