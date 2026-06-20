@@ -19,6 +19,7 @@ export default function AnnexPurchases() {
     taxableAmount: 0,
     vatAmount: 0,
     exemptAmount: 0,
+    exportAmount: 0
   };
   const period = data?.period || '';
 

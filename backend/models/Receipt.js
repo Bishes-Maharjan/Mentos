@@ -69,6 +69,10 @@ receiptSchema.virtual("exemptAmount").get(function () {
     .reduce((sum, item) => sum + item.amount, 0);
 });
 
+receiptSchema.virtual("exportAmount").get(function () {
+  return this.transactionType === "export" ? this.subtotal : 0;
+});
+
 // Ensure virtuals are included in JSON output
 receiptSchema.set("toJSON", { virtuals: true });
 receiptSchema.set("toObject", { virtuals: true });

@@ -76,6 +76,7 @@ Context:
 - For "date_bs", extract the Nepali Bikram Sambat date (e.g. 2080-03-15 or 2081/01/12) exactly as it appears or as a normalized YYYY-MM-DD string.
 - Amounts are in NPR (Nepali Rupees)
 - "Bill No" or "Invoice No" or "बिल नं" refers to the invoice number
+- If vatAmount is 0 on a sales invoice, classify transactionType as "export".
 
 Audit Rules Context1 (JSON):
 ${rulesData}

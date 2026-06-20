@@ -43,6 +43,7 @@ export interface AnnexRow {
   exemptAmount: number;
   exportAmount: number;
   receiptId: string;
+  transactionType: string;
 }
 
 export interface AnnexTotals {
@@ -50,6 +51,7 @@ export interface AnnexTotals {
   taxableAmount: number;
   vatAmount: number;
   exemptAmount: number;
+  exportAmount: number;
 }
 
 export interface AnnexResponse {

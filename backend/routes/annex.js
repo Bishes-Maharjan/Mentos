@@ -41,6 +41,8 @@ function formatAnnexRows(receipts) {
       exemptAmount,
       exportAmount: 0, // Not applicable for MVP
       receiptId: r._id,
+      transactionType: r.transactionType || 'domestic',
+      exportAmount: r.exportAmount || 0,
     };
   });
 }
@@ -62,8 +64,9 @@ router.get("/sales", auth, async (req, res) => {
         taxableAmount: acc.taxableAmount + row.taxableAmount,
         vatAmount: acc.vatAmount + row.vatAmount,
         exemptAmount: acc.exemptAmount + row.exemptAmount,
+        exportAmount: acc.exportAmount + row.exportAmount,
       }),
-      { totalSalesAmount: 0, taxableAmount: 0, vatAmount: 0, exemptAmount: 0 }
+      { totalSalesAmount: 0, taxableAmount: 0, vatAmount: 0, exemptAmount: 0, exportAmount: 0 }
     );
 
     res.json({

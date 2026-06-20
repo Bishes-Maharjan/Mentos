@@ -75,6 +75,10 @@ export default function AnnexTable({
                   Date
                   <span className="th-nepali">मिति</span>
                 </th>
+                <th>
+                  Transaction Type
+                  <span className="th-nepali">लेनदेनको किसिम</span>
+                </th>
                 <th className="annex-table__amount">
                   Total Amount
                   <span className="th-nepali">कुल रकम</span>
@@ -91,6 +95,10 @@ export default function AnnexTable({
                   Exempt Amount
                   <span className="th-nepali">कर छुट रकम</span>
                 </th>
+                <th className="annex-table__amount">
+                  Export Amount
+                  <span className="th-nepali">निर्यात रकम</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -104,10 +112,12 @@ export default function AnnexTable({
                   <td>{row.pan}</td>
                   <td>{row.invoiceNumber}</td>
                   <td>{row.date}</td>
+                  <td>{row.transactionType}</td>
                   <td className="annex-table__amount">{formatNPR(row.totalSalesAmount)}</td>
                   <td className="annex-table__amount">{formatNPR(row.taxableAmount)}</td>
                   <td className="annex-table__amount">{formatNPR(row.vatAmount)}</td>
                   <td className="annex-table__amount">{formatNPR(row.exemptAmount)}</td>
+                  <td className="annex-table__amount">{formatNPR(row.exportAmount)}</td>
                 </tr>
               ))}
               {/* Totals row */}
@@ -117,10 +127,12 @@ export default function AnnexTable({
                 <td></td>
                 <td></td>
                 <td></td>
+                <td></td>
                 <td className="annex-table__amount">{formatNPR(totals.totalSalesAmount)}</td>
                 <td className="annex-table__amount">{formatNPR(totals.taxableAmount)}</td>
                 <td className="annex-table__amount">{formatNPR(totals.vatAmount)}</td>
                 <td className="annex-table__amount">{formatNPR(totals.exemptAmount)}</td>
+                <td className="annex-table__amount">{formatNPR(totals.exportAmount)}</td>
               </tr>
             </tbody>
           </table>

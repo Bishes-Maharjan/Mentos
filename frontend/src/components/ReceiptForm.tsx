@@ -32,6 +32,7 @@ export default function ReceiptForm({
   const [vatAmount, setVatAmount] = useState(receipt.vatAmount);
   const [total, setTotal] = useState(receipt.total);
   const [saving, setSaving] = useState(false);
+  const [transactionType, setTransactionType] = useState(receipt.transactionType || 'domestic');
 
   const updateItem = useCallback(
     (index: number, field: keyof ReceiptItem, value: string | number | boolean) => {
@@ -73,6 +74,7 @@ export default function ReceiptForm({
         subtotal,
         vatAmount,
         total,
+        transactionType,
       });
       toast.success(isNew ? 'Receipt saved successfully!' : 'Receipt updated!');
     } catch (err: unknown) {
@@ -81,7 +83,7 @@ export default function ReceiptForm({
     } finally {
       setSaving(false);
     }
-  }, [partyName, partyPAN, invoiceNumber, dateBS, type, items, subtotal, vatAmount, total, onSave, isNew]);
+  }, [partyName, partyPAN, invoiceNumber, dateBS, type, items, subtotal, vatAmount, total, onSave, isNew, transactionType]);
 
   return (
     <div className="card card--glass">
@@ -165,6 +167,19 @@ export default function ReceiptForm({
             <select value={type} onChange={(e) => setType(e.target.value as 'sale' | 'purchase')}>
               <option value="purchase">Purchase</option>
               <option value="sale">Sale</option>
+            </select>
+          </div>
+
+          <div className="receipt-form__field">
+            <label className="receipt-form__label">Transaction Type</label>
+            <select
+              value={transactionType}
+              onChange={(e) => setTransactionType(e.target.value as 'domestic' | 'export' | 'import' | 'exempt')}
+            >
+              <option value="domestic">Domestic</option>
+              <option value="export">Export</option>
+              <option value="import">Import</option>
+              <option value="exempt">Exempt</option>
             </select>
           </div>
         </div>
