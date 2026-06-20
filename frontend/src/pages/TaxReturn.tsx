@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { FileText, CheckCircle, Clock, Trash2, Calculator, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { getD2Returns, calculateD2, deleteD2Return, formatNPR } from '../api/client';
+import { getD2Returns, calculateD2, deleteD2Return, automateIRD, formatNPR } from '../api/client';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 const bsMonthNames = [
@@ -54,6 +54,21 @@ export default function TaxReturn() {
     },
   });
 
+  const autoMutation = useMutation({
+    mutationFn: automateIRD,
+    onSuccess: (res) => {
+      toast.success(res.message);
+      if (res.screenshotUrl) {
+        // We can open the screenshot in a new tab
+        window.open(`http://localhost:5001${res.screenshotUrl}`, '_blank');
+      }
+      queryClient.invalidateQueries({ queryKey: ['d2Returns'] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.error || 'Automation failed');
+    },
+  });
+
   const handleCalculate = (e: React.FormEvent) => {
     e.preventDefault();
     calcMutation.mutate({ fiscalYear: formFY, month: formMonth });
@@ -64,6 +79,13 @@ export default function TaxReturn() {
       return;
     }
     deleteMutation.mutate(id);
+  };
+
+  const handleAutomate = (fiscalYear: string, month: number) => {
+    toast.loading('Starting IRD Automation... Please wait', { id: 'automate-ird' });
+    autoMutation.mutate({ fiscalYear, month }, {
+      onSettled: () => toast.dismiss('automate-ird'),
+    });
   };
 
   const d2Returns = returns || [];
@@ -211,7 +233,16 @@ export default function TaxReturn() {
                           </div>
                         )}
                       </td>
-                      <td style={{ textAlign: 'center' }}>
+                      <td style={{ textAlign: 'center', display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                        <button
+                          className="btn btn--primary btn--sm"
+                          onClick={() => handleAutomate(doc.fiscalYear, doc.month)}
+                          disabled={autoMutation.isPending}
+                          title="Automate IRD Entry"
+                          style={{ padding: '0.25rem 0.5rem', fontSize: '12px' }}
+                        >
+                          {autoMutation.isPending && autoMutation.variables?.month === doc.month && autoMutation.variables?.fiscalYear === doc.fiscalYear ? '...' : 'Automate IRD'}
+                        </button>
                         <button
                           className="btn btn--danger btn--sm"
                           onClick={() => handleDelete(doc._id, doc.fiscalYear, monthName)}

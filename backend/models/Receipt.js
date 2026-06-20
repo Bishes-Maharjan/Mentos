@@ -19,8 +19,7 @@ const receiptSchema = new mongoose.Schema(
     partyPAN: {
       type: String,
       match: [/^\d{9}$/, "PAN must be 9 digits"],
-      default: null,
-      unique: true
+      default: null
     },
     invoiceNumber: { type: String, default: null },
     date: { type: Date, default: null },
@@ -57,6 +56,8 @@ const receiptSchema = new mongoose.Schema(
 );
 
 // Virtual: compute taxable amount (sum of items where VAT is applicable)
+receiptSchema.index({ invoiceNumber: 1, userId: 1 }, { unique: true, sparse: true });
+
 receiptSchema.virtual("taxableAmount").get(function () {
   return this.items
     .filter((item) => item.vatApplicable)

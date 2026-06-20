@@ -21,6 +21,7 @@ const annexRoutes = require("./routes/annex");
 const vatRoutes = require("./routes/vat");
 const d2Routes = require("./routes/d2");
 const userRoutes = require("./routes/users");
+const automationRoutes = require("./routes/automation");
 
 // Public routes (no auth needed)
 app.use("/api/users", userRoutes);
@@ -30,6 +31,7 @@ app.use("/api/receipts", auth, receiptRoutes);
 app.use("/api/annex", auth, annexRoutes);
 app.use("/api/vat", auth, vatRoutes);
 app.use("/api/d2", d2Routes);
+app.use("/api/automation", auth, automationRoutes);
 
 // ---- Health check ----
 app.get("/api/health", (req, res) => {

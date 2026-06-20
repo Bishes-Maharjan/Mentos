@@ -45,25 +45,33 @@ export default function App() {
         }}
       />
       
-      {!user ? (
-        <AuthPage />
-      ) : (
-        <Routes>
-          <Route element={<Layout />}>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/upload" element={<Upload />} />
-            <Route path="/receipts/:id" element={<ReceiptDetail />} />
-            <Route path="/annex/sales" element={<AnnexSales />} />
-            <Route path="/annex/purchases" element={<AnnexPurchases />} />
-            <Route path="/tax-return" element={<TaxReturn />} />
-          </Route>
+      <Routes>
+        {/* IRD Portal - Standalone Public Layout */}
+        <Route path="/ird" element={<IRDVatForm />} />
+        <Route path="/ird/transactions" element={<IRDTransactions />} />
+        <Route path="/ird/success" element={<IRDSuccess />} />
 
-          {/* IRD Portal - Standalone Layout */}
-          <Route path="/ird" element={<IRDVatForm />} />
-          <Route path="/ird/transactions" element={<IRDTransactions />} />
-          <Route path="/ird/success" element={<IRDSuccess />} />
-        </Routes>
-      )}
+        {/* Main App Routes */}
+        <Route
+          path="/*"
+          element={
+            !user ? (
+              <AuthPage />
+            ) : (
+              <Routes>
+                <Route element={<Layout />}>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/upload" element={<Upload />} />
+                  <Route path="/receipts/:id" element={<ReceiptDetail />} />
+                  <Route path="/annex/sales" element={<AnnexSales />} />
+                  <Route path="/annex/purchases" element={<AnnexPurchases />} />
+                  <Route path="/tax-return" element={<TaxReturn />} />
+                </Route>
+              </Routes>
+            )
+          }
+        />
+      </Routes>
     </>
   );
 }

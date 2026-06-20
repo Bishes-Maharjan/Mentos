@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 type Row = {
@@ -22,20 +22,62 @@ const section2: Row[] = [
   { no: "२.४.", label: "छुट पैठारी / Exempt Imports", karobar: true },
 ];
 
-function NumInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function NumInput({ value, onChange, dataKey }: { value: string; onChange: (v: string) => void; dataKey?: string }) {
   return (
     <input
       type="text"
       value={value}
       onChange={(e) => onChange(e.target.value)}
       className="ird-num-input"
+      data-ird-key={dataKey}
     />
   );
+}
+
+// Extend window type for automation bridge
+declare global {
+  interface Window {
+    __setIRDValue?: (key: string, value: string) => void;
+    __setIRDBatch?: (entries: Record<string, string>) => void;
+    __irdReady?: boolean;
+  }
 }
 
 export default function IRDVatForm() {
   const navigate = useNavigate();
   const [vals, setVals] = useState<Record<string, string>>({});
+
+  // ── Automation Bridge ──────────────────────────────────────────────
+  // Expose React's setState directly on window so Playwright/Puppeteer
+  // can bypass the DOM event system and call React state directly.
+  // This guarantees the UI updates visually because React owns the render.
+  useEffect(() => {
+    window.__setIRDValue = (key: string, value: string) => {
+      setVals((prev) => ({ ...prev, [key]: value }));
+      // Highlight the input that just got filled
+      setTimeout(() => {
+        const input = document.querySelector(`[data-ird-key="${key}"]`) as HTMLInputElement | null;
+        if (input) {
+          input.style.transition = 'background-color 0.3s ease';
+          input.style.backgroundColor = '#fef08a';
+          input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setTimeout(() => { input.style.backgroundColor = ''; }, 800);
+        }
+      }, 50);
+    };
+
+    window.__setIRDBatch = (entries: Record<string, string>) => {
+      setVals((prev) => ({ ...prev, ...entries }));
+    };
+
+    window.__irdReady = true;
+
+    return () => {
+      delete window.__setIRDValue;
+      delete window.__setIRDBatch;
+      delete window.__irdReady;
+    };
+  }, []);
 
   const set = (k: string) => (v: string) =>
     setVals((p) => ({ ...p, [k]: v }));
@@ -55,7 +97,9 @@ export default function IRDVatForm() {
 
   const hasAny = Object.values(vals).some((v) => v && v.trim() !== "");
 
-  const renderRow = (r: Row) => (
+  const renderRow = (r: Row) => {
+    const keyBase = r.no.replace(/\.$/, "");
+    return (
     <tr key={r.no} className="ird-data-row">
       <td>
         {r.no} {r.label}
@@ -63,29 +107,33 @@ export default function IRDVatForm() {
       <td>
         {r.karobar && (
           <NumInput
-            value={vals[`${r.no.replace(/\.$/, "")}_k`] ?? ""}
-            onChange={set(`${r.no.replace(/\.$/, "")}_k`)}
+            value={vals[`${keyBase}_k`] ?? ""}
+            onChange={set(`${keyBase}_k`)}
+            dataKey={`${keyBase}_k`}
           />
         )}
       </td>
       <td>
         {r.kharidCredit && (
           <NumInput
-            value={vals[`${r.no.replace(/\.$/, "")}_c`] ?? ""}
-            onChange={set(`${r.no.replace(/\.$/, "")}_c`)}
+            value={vals[`${keyBase}_c`] ?? ""}
+            onChange={set(`${keyBase}_c`)}
+            dataKey={`${keyBase}_c`}
           />
         )}
       </td>
       <td>
         {r.bikriDebit && (
           <NumInput
-            value={vals[`${r.no.replace(/\.$/, "")}_d`] ?? ""}
-            onChange={set(`${r.no.replace(/\.$/, "")}_d`)}
+            value={vals[`${keyBase}_d`] ?? ""}
+            onChange={set(`${keyBase}_d`)}
+            dataKey={`${keyBase}_d`}
           />
         )}
       </td>
     </tr>
-  );
+    );
+  };
 
   const sectionHeader = (text: string) => (
     <tr className="ird-section-header">
@@ -136,10 +184,10 @@ export default function IRDVatForm() {
               <td>३.१. अन्य थपघट / Other Adjustments</td>
               <td></td>
               <td>
-                <NumInput value={vals["3.1_c"] ?? ""} onChange={set("3.1_c")} />
+              <NumInput value={vals["3.1_c"] ?? ""} onChange={set("3.1_c")} dataKey="3.1_c" />
               </td>
               <td>
-                <NumInput value={vals["3.1_d"] ?? ""} onChange={set("3.1_d")} />
+                <NumInput value={vals["3.1_d"] ?? ""} onChange={set("3.1_d")} dataKey="3.1_d" />
               </td>
             </tr>
             <tr className="ird-section-header">
@@ -189,6 +237,7 @@ export default function IRDVatForm() {
                     <NumInput
                       value={String(r.value)}
                       onChange={set(r.key!)}
+                      dataKey={r.key}
                     />
                   ) : (
                     <input

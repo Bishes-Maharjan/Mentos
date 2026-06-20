@@ -171,6 +171,14 @@ export async function deleteD2Return(id: string): Promise<{ message: string }> {
   return res.data;
 }
 
+export async function automateIRD(data: {
+  fiscalYear: string;
+  month: number;
+}): Promise<{ message: string; screenshotUrl: string }> {
+  const res = await api.post('/api/automation/ird', data);
+  return res.data;
+}
+
 // ============================================================
 // Auth operations
 // ============================================================
@@ -214,8 +222,9 @@ export async function loginUser(data: { pan: string; email?: string; phone?: str
 // Utility
 // ============================================================
 
-export function formatNPR(amount: number): string {
-  return `NPR ${amount.toLocaleString('en-IN', {
+export function formatNPR(amount: number | undefined | null): string {
+  const safeAmount = Number(amount) || 0;
+  return `NPR ${safeAmount.toLocaleString('en-IN', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
