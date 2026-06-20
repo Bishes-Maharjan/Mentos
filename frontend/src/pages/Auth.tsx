@@ -119,6 +119,15 @@ export default function AuthPage() {
   };
 
   return (
+<<<<<<< HEAD
+    <div className="auth-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="auth-card" style={{ width: '100%', maxWidth: 'clamp(450px, 40vw, 800px)', background: '#ffffff', borderRadius: '8px', border: '1px solid #e2e8f0', padding: '0', overflow: 'hidden' }}>
+        <div className="auth-form-panel" style={{ padding: 'clamp(1.5rem, 4vw, 3rem)', width: '100%' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', height: '100%', maxHeight: '600px' }}>
+            <div className="auth-hero" style={{ textAlign: 'center', marginBottom: '2rem' }}>
+              <h1 style={{ fontSize: '2.5rem', fontWeight: 800, color: '#000', margin: '0 0 0.5rem 0', letterSpacing: '-0.02em' }}>Kaji.AI</h1>
+              <p style={{ color: '#4b5563', fontSize: '1.1rem' }}>{isLogin ? 'Sign in to manage your receipts and VAT' : 'Register to manage your receipts and VAT'}</p>
+=======
     <div style={{
       minHeight: '100vh',
       display: 'flex',
@@ -205,71 +214,82 @@ export default function AuthPage() {
                   placeholder="Enter your password"
                 />
               </div>
+>>>>>>> 14f90023a2ec789e6d6ac43fd9b07f22127bca52
             </div>
 
-            <button type="submit" className="btn btn--primary" style={{ width: '100%', marginTop: 'var(--space-4)', flexShrink: 0 }} disabled={loginMutation.isPending}>
-              {loginMutation.isPending ? 'Loading...' : 'Sign In'}
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={handleRegister} className="receipt-form" style={{ display: 'flex', flexDirection: 'column', height: '400px' }}>
-            <div style={{ flex: 1, overflowY: 'auto', paddingRight: '0.5rem' }}>
-              <div className="receipt-form__field">
-                <label className="receipt-form__label">Business Name *</label>
-              <input
-                type="text"
-                required
-                value={businessName}
-                onChange={(e) => setBusinessName(e.target.value)}
-                placeholder="e.g. Acme Corp"
-              />
+            <div style={{ display: 'flex', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '4px', marginBottom: '2.5rem' }}>
+              <button
+                type="button"
+                style={{ flex: 1, padding: '0.875rem', borderRadius: '8px', fontWeight: 600, border: 'none', background: isLogin ? 'var(--accent-primary)' : 'transparent', color: isLogin ? '#fff' : '#9ca3af', transition: 'all 0.2s', cursor: 'pointer' }}
+                onClick={() => setIsLogin(true)}
+              >
+                Login
+              </button>
+              <button
+                type="button"
+                style={{ flex: 1, padding: '0.875rem', borderRadius: '8px', fontWeight: 600, border: 'none', background: !isLogin ? 'var(--accent-primary)' : 'transparent', color: !isLogin ? '#fff' : '#9ca3af', transition: 'all 0.2s', cursor: 'pointer' }}
+                onClick={() => setIsLogin(false)}
+              >
+                Register
+              </button>
             </div>
-            <div className="receipt-form__grid">
-              <div className="receipt-form__field">
-                <label className="receipt-form__label">PAN (9 digits) *</label>
+
+            <div className="auth-form-container" style={{ flex: 1, overflowY: 'auto', paddingRight: '8px' }}>
+              {isLogin ? (
+            <form onSubmit={handleLogin} className="auth-form" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div>
+                <label style={{ display: 'block', fontWeight: 500, color: '#9ca3af', marginBottom: '0.5rem', fontSize: '0.95rem' }}>PAN (9 digits) <span style={{ color: '#ef4444' }}>*</span></label>
                 <input
+                  style={{ width: '100%', padding: '1rem', border: '1px solid #d1d5db', borderRadius: '10px', fontSize: '1rem', outline: 'none', color: '#111827' }}
                   type="text"
                   required
                   pattern="\d{9}"
                   value={pan}
                   onChange={(e) => setPan(e.target.value)}
-                  placeholder="e.g. 123456789"
+                  placeholder="eg. 301245678"
                 />
               </div>
-              <div className="receipt-form__field">
-                <label className="receipt-form__label">Owner Name</label>
+
+              <div>
+                <label style={{ display: 'block', fontWeight: 500, color: '#9ca3af', marginBottom: '0.5rem', fontSize: '0.95rem' }}>Email or Phone <span style={{ color: '#ef4444' }}>*</span></label>
                 <input
+                  style={{ width: '100%', padding: '1rem', border: '1px solid #d1d5db', borderRadius: '10px', fontSize: '1rem', outline: 'none', color: '#111827' }}
                   type="text"
-                  value={ownerName}
-                  onChange={(e) => setOwnerName(e.target.value)}
-                  placeholder="e.g. Ram Bahadur"
-                />
-              </div>
-            </div>
-
-            <div className="receipt-form__grid">
-              <div className="receipt-form__field">
-                <label className="receipt-form__label">Email *</label>
-                <input
-                  type="email"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
+                  value={contact}
+                  onChange={(e) => setContact(e.target.value)}
+                  placeholder="example@mail.com or 9812345678"
                 />
               </div>
-              <div className="receipt-form__field">
-                <label className="receipt-form__label">Phone *</label>
-                <input
-                  type="tel"
-                  required
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="e.g. 9812345678"
-                />
-              </div>
-            </div>
 
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#4b5563', fontSize: '0.9rem', cursor: 'pointer' }}>
+                  <input type="checkbox" style={{ width: '16px', height: '16px', borderRadius: '4px', border: '1px solid #d1d5db' }} />
+                  Remember me
+                </label>
+                <a href="#" style={{ color: '#9ca3af', fontSize: '0.9rem', textDecoration: 'none' }}>Forgot PAN number?</a>
+              </div>
+
+<<<<<<< HEAD
+              <button type="submit" style={{ width: '100%', padding: '1rem', background: 'var(--accent-primary)', color: '#fff', fontWeight: 600, border: 'none', borderRadius: '10px', fontSize: '1.1rem', cursor: 'pointer', marginTop: '1rem' }} disabled={loginMutation.isPending}>
+                {loginMutation.isPending ? 'Signing in...' : 'Sign In'}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleRegister} className="auth-form">
+              <div className="auth-grid">
+                <div className="auth-field">
+                  <label className="auth-label">Business Name *</label>
+                  <input
+                    className="auth-input"
+                    type="text"
+                    required
+                    value={businessName}
+                    onChange={(e) => setBusinessName(e.target.value)}
+                    placeholder="Acme Corp"
+                  />
+                </div>
+=======
             <div className="receipt-form__grid">
               <div className="receipt-form__field">
                 <label className="receipt-form__label">Password *</label>
@@ -304,113 +324,200 @@ export default function AuthPage() {
                 placeholder="e.g. Thamel, Kathmandu"
               />
             </div>
+>>>>>>> 14f90023a2ec789e6d6ac43fd9b07f22127bca52
 
-            <div className="receipt-form__field" style={{ marginTop: 'var(--space-4)' }}>
-              <label
-                className="receipt-form__label"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  cursor: 'pointer',
-                  marginBottom: 0,
-                  fontWeight: 500
-                }}
-              >
+                <div className="auth-field">
+                  <label className="auth-label">PAN (9 digits) *</label>
+                  <input
+                    className="auth-input"
+                    type="text"
+                    required
+                    pattern="\d{9}"
+                    value={pan}
+                    onChange={(e) => setPan(e.target.value)}
+                    placeholder="123456789"
+                  />
+                </div>
+              </div>
+
+              <div className="auth-grid">
+                <div className="auth-field">
+                  <label className="auth-label">Owner Name</label>
+                  <input
+                    className="auth-input"
+                    type="text"
+                    value={ownerName}
+                    onChange={(e) => setOwnerName(e.target.value)}
+                    placeholder="Ram Bahadur"
+                  />
+                </div>
+                <div className="auth-field">
+                  <label className="auth-label">Business Address</label>
+                  <input
+                    className="auth-input"
+                    type="text"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="Kathmandu, Nepal"
+                  />
+                </div>
+              </div>
+
+              <div className="auth-grid">
+                <div className="auth-field">
+                  <label className="auth-label">Email *</label>
+                  <input
+                    className="auth-input"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                  />
+                </div>
+                <div className="auth-field">
+                  <label className="auth-label">Phone *</label>
+                  <input
+                    className="auth-input"
+                    type="tel"
+                    required
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="9812345678"
+                  />
+                </div>
+              </div>
+
+              <div className="auth-checkbox-row">
                 <input
+                  id="isNewBusiness"
                   type="checkbox"
                   checked={isNewBusiness}
                   onChange={(e) => setIsNewBusiness(e.target.checked)}
-                  style={{ width: 'auto', margin: 0, cursor: 'pointer' }}
                 />
-                Is this a new business? (No prior D2 history)
-              </label>
-            </div>
+                <label htmlFor="isNewBusiness" className="auth-checkbox-label">
+                  <strong>New Business Setup</strong>
+                  <span style={{ display: 'block', fontSize: 'var(--font-size-xs)', color: 'var(--text-tertiary)' }}>
+                    Uncheck if you have existing VAT filings / D2 reports from previous months.
+                  </span>
+                </label>
+              </div>
 
-            {!isNewBusiness && (
-              <div style={{ marginTop: 'var(--space-4)', padding: 'var(--space-4)', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)' }}>
-                <h3 style={{ marginBottom: 'var(--space-4)', fontSize: 'var(--font-size-md)' }}>Latest D2 Record</h3>
-                <div className="receipt-form__grid">
-                  <div className="receipt-form__field">
-                    <label className="receipt-form__label">Fiscal Year *</label>
-                    <input
-                      type="text"
-                      required={!isNewBusiness}
-                      value={fiscalYear}
-                      onChange={(e) => setFiscalYear(e.target.value)}
-                      placeholder="e.g. 2081/82"
-                    />
+              {!isNewBusiness && (
+                <div className="auth-panel" style={{ marginTop: 'var(--space-3)' }}>
+                  <div className="auth-panel-title">Latest D2 Details</div>
+                  <div className="auth-grid">
+                    <div className="auth-field">
+                      <label className="auth-label">Fiscal Year *</label>
+                      <input
+                        className="auth-input"
+                        type="text"
+                        value={fiscalYear}
+                        onChange={(e) => setFiscalYear(e.target.value)}
+                        placeholder="2080/2081"
+                        required={!isNewBusiness}
+                      />
+                    </div>
+                    <div className="auth-field">
+                      <label className="auth-label">Month (1-12) *</label>
+                      <input
+                        className="auth-input"
+                        type="number"
+                        min="1"
+                        max="12"
+                        value={month}
+                        onChange={(e) => setMonth(e.target.value)}
+                        placeholder="3"
+                        required={!isNewBusiness}
+                      />
+                    </div>
                   </div>
-                  <div className="receipt-form__field">
-                    <label className="receipt-form__label">Month (1-12) *</label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="12"
-                      required={!isNewBusiness}
-                      value={month}
-                      onChange={(e) => setMonth(e.target.value)}
-                      placeholder="e.g. 9"
-                    />
+
+                  <div className="auth-grid" style={{ marginTop: 'var(--space-3)' }}>
+                    <div className="auth-field">
+                      <label className="auth-label">Total Sales (Rs.)</label>
+                      <input
+                        className="auth-input"
+                        type="number"
+                        step="0.01"
+                        value={totalSales}
+                        onChange={(e) => setTotalSales(e.target.value)}
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div className="auth-field">
+                      <label className="auth-label">Total Purchases (Rs.)</label>
+                      <input
+                        className="auth-input"
+                        type="number"
+                        step="0.01"
+                        value={totalPurchases}
+                        onChange={(e) => setTotalPurchases(e.target.value)}
+                        placeholder="0.00"
+                      />
+                    </div>
                   </div>
-                  <div className="receipt-form__field">
-                    <label className="receipt-form__label">Total Sales</label>
-                    <input
-                      type="number"
-                      value={totalSales}
-                      onChange={(e) => setTotalSales(e.target.value)}
-                    />
+
+                  <div className="auth-grid" style={{ marginTop: 'var(--space-3)' }}>
+                    <div className="auth-field">
+                      <label className="auth-label">Output VAT (Rs.)</label>
+                      <input
+                        className="auth-input"
+                        type="number"
+                        step="0.01"
+                        value={outputVAT}
+                        onChange={(e) => setOutputVAT(e.target.value)}
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div className="auth-field">
+                      <label className="auth-label">Input VAT (Rs.)</label>
+                      <input
+                        className="auth-input"
+                        type="number"
+                        step="0.01"
+                        value={inputVAT}
+                        onChange={(e) => setInputVAT(e.target.value)}
+                        placeholder="0.00"
+                      />
+                    </div>
                   </div>
-                  <div className="receipt-form__field">
-                    <label className="receipt-form__label">Total Purchases</label>
-                    <input
-                      type="number"
-                      value={totalPurchases}
-                      onChange={(e) => setTotalPurchases(e.target.value)}
-                    />
-                  </div>
-                  <div className="receipt-form__field">
-                    <label className="receipt-form__label">Output VAT</label>
-                    <input
-                      type="number"
-                      value={outputVAT}
-                      onChange={(e) => setOutputVAT(e.target.value)}
-                    />
-                  </div>
-                  <div className="receipt-form__field">
-                    <label className="receipt-form__label">Input VAT</label>
-                    <input
-                      type="number"
-                      value={inputVAT}
-                      onChange={(e) => setInputVAT(e.target.value)}
-                    />
-                  </div>
-                  <div className="receipt-form__field">
-                    <label className="receipt-form__label">Credit Brought Forward</label>
-                    <input
-                      type="number"
-                      value={creditBroughtForward}
-                      onChange={(e) => setCreditBroughtForward(e.target.value)}
-                    />
-                  </div>
-                  <div className="receipt-form__field">
-                    <label className="receipt-form__label">Net VAT Payable (if positive)</label>
-                    <input
-                      type="number"
-                      value={netVATPayable}
-                      onChange={(e) => setNetVATPayable(e.target.value)}
-                    />
+
+                  <div className="auth-grid" style={{ marginTop: 'var(--space-3)' }}>
+                    <div className="auth-field">
+                      <label className="auth-label">Credit Brought Forward (Rs.)</label>
+                      <input
+                        className="auth-input"
+                        type="number"
+                        step="0.01"
+                        value={creditBroughtForward}
+                        onChange={(e) => setCreditBroughtForward(e.target.value)}
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div className="auth-field">
+                      <label className="auth-label">Net VAT Payable (Rs.)</label>
+                      <input
+                        className="auth-input"
+                        type="number"
+                        step="0.01"
+                        value={netVATPayable}
+                        onChange={(e) => setNetVATPayable(e.target.value)}
+                        placeholder="0.00"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-            </div>
+              )}
 
-            <button type="submit" className="btn btn--primary" style={{ width: '100%', marginTop: 'var(--space-6)', flexShrink: 0 }} disabled={registerMutation.isPending}>
-              {registerMutation.isPending ? 'Loading...' : 'Register'}
-            </button>
-          </form>
-        )}
+              <button type="submit" className="btn btn--primary auth-submit" disabled={registerMutation.isPending}>
+                {registerMutation.isPending ? 'Registering...' : 'Register'}
+              </button>
+            </form>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

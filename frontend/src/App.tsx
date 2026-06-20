@@ -13,6 +13,7 @@ import IRDTransactions from './pages/IRDTransactions';
 import IRDSuccess from './pages/IRDSuccess';
 import D2Detail from './pages/D2Detail';
 import AuthPage from './pages/Auth';
+import Landing from './pages/Landing';
 import Me from './pages/Me';
 
 export default function App() {
@@ -33,9 +34,9 @@ export default function App() {
         toastOptions={{
           duration: 4000,
           style: {
-            background: '#111827',
-            color: '#f1f5f9',
-            border: '1px solid #1e293b',
+            background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)',
+            border: '1px solid var(--border)',
             borderRadius: '0.75rem',
           },
           success: {
@@ -46,13 +47,15 @@ export default function App() {
           },
         }}
       />
-      
+
       <Routes>
         {/* IRD Portal - Standalone Public Layout */}
         <Route path="/ird" element={<IRDVatForm />} />
         <Route path="/ird/transactions" element={<IRDTransactions />} />
         <Route path="/ird/success" element={<IRDSuccess />} />
 
+        <Route path="/" element={<Landing />} />
+        <Route path="/assign" element={<AuthPage />} />
         {/* Main App Routes */}
         <Route
           path="/*"
