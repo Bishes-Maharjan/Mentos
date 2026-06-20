@@ -103,7 +103,7 @@ If any text is in Devanagari (Nepali), transliterate it to English alongside the
  * Step 2: Structure the raw OCR text into the receipt JSON schema.
  * Text-only call — no image needed.
  */
-async function structureReceiptData(rawText) {
+async function structureReceiptData(rawText, userContext, receiptType) {
   return await withKeyRotation(async (genAI) => {
     const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash",
@@ -134,6 +134,16 @@ Context:
 - Amounts are in NPR (Nepali Rupees)
 - "Bill No" or "Invoice No" or "बिल नं" refers to the invoice number
 - If vatAmount is 0 on a sales invoice, classify transactionType as "export".
+
+USER CONTEXT:
+The user uploading this receipt is:
+- Business Name: ${userContext?.businessName || 'Unknown'}
+- PAN: ${userContext?.pan || 'Unknown'}
+- Receipt Type being uploaded: ${receiptType}
+
+IMPORTANT FOR PARTY NAME & PAN:
+Do NOT extract the user's own PAN (${userContext?.pan}) or Name as the party_pan or party_name.
+Since this is a "${receiptType}" document uploaded by the user, you must find the OTHER party's (the ${receiptType === 'sale' ? 'buyer' : 'seller'}'s) PAN and Name from the document to use as party_pan and party_name.
 
 Audit Rules Context1 (JSON):
 ${rulesData}
@@ -201,13 +211,13 @@ Return ONLY the JSON object, no markdown formatting.`;
 /**
  * Full pipeline: image → raw text → structured JSON
  */
-async function processReceipt(imagePath) {
+async function processReceipt(imagePath, userContext, receiptType) {
   console.log(`[Gemini] Step 1: Extracting raw text from ${imagePath}`);
   const rawText = await extractRawText(imagePath);
   console.log(`[Gemini] Raw text extracted (${rawText.length} chars)`);
 
   console.log(`[Gemini] Step 2: Structuring receipt data`);
-  const structured = await structureReceiptData(rawText);
+  const structured = await structureReceiptData(rawText, userContext, receiptType);
   console.log(`[Gemini] Structured data extracted, confidence: ${structured.confidence}`);
 
   return { rawText, structured };

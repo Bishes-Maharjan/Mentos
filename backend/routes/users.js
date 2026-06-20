@@ -1,7 +1,7 @@
 const express = require("express");
 const User = require("../models/User");
 const D2 = require("../models/D2");
-const { signToken } = require("../middleware/auth");
+const { signToken, auth } = require("../middleware/auth");
 
 const router = express.Router();
 const SUSPENDED_PANS_DEMO = new Set([
@@ -193,6 +193,40 @@ router.post("/login", async (req, res) => {
   } catch (error) {
     console.error("[Login Error]", error);
     res.status(500).json({ error: "Login failed", details: error.message });
+  }
+});
+
+// ============================================================
+// GET /api/users/me — Get logged-in user's profile
+// ============================================================
+router.get("/me", auth, async (req, res) => {
+  try {
+    res.json(req.user);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch profile", details: error.message });
+  }
+});
+
+// ============================================================
+// PUT /api/users/me — Update logged-in user's profile
+// ============================================================
+router.put("/me", auth, async (req, res) => {
+  try {
+    const updates = req.body;
+    // Don't allow changing PAN or _id through this route
+    delete updates.pan;
+    delete updates._id;
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { $set: updates },
+      { new: true, runValidators: true }
+    );
+
+    res.json({ message: "Profile updated successfully", user });
+  } catch (error) {
+    console.error("[Update Profile Error]", error);
+    res.status(500).json({ error: "Failed to update profile", details: error.message });
   }
 });
 

@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Upload, FileText, ShoppingCart, LogOut } from 'lucide-react';
+import { LayoutDashboard, Upload, FileText, ShoppingCart, LogOut, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const navItems = [
@@ -8,6 +8,7 @@ const navItems = [
   { to: '/annex/sales', icon: FileText, label: 'Sales Register' },
   { to: '/annex/purchases', icon: ShoppingCart, label: 'Purchase Register' },
   { to: '/tax-return', icon: FileText, label: 'Tax Return (D2)' },
+  { to: '/me', icon: User, label: 'My Profile' },
 ];
 
 export default function Layout() {

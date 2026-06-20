@@ -13,6 +13,7 @@ import IRDTransactions from './pages/IRDTransactions';
 import IRDSuccess from './pages/IRDSuccess';
 import D2Detail from './pages/D2Detail';
 import AuthPage from './pages/Auth';
+import Me from './pages/Me';
 
 export default function App() {
   const { user, isLoading } = useAuth();
@@ -68,6 +69,7 @@ export default function App() {
                   <Route path="/annex/purchases" element={<AnnexPurchases />} />
                   <Route path="/tax-return" element={<TaxReturn />} />
                   <Route path="/d2/:id" element={<D2Detail />} />
+                  <Route path="/me" element={<Me />} />
                 </Route>
               </Routes>
             )

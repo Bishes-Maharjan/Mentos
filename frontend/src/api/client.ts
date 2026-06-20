@@ -237,6 +237,16 @@ export async function loginUser(data: { pan: string; email?: string; phone?: str
   return res.data;
 }
 
+export async function getMe() {
+  const res = await api.get('/api/users/me');
+  return res.data;
+}
+
+export async function updateMe(data: Partial<RegisterPayload>) {
+  const res = await api.put('/api/users/me', data);
+  return res.data;
+}
+
 // ============================================================
 // Utility
 // ============================================================

@@ -51,7 +51,11 @@ router.post("/upload", auth, upload.single("receipt"), async (req, res) => {
     const receiptType = req.body.type || "purchase"; // default to purchase
 
     // Run two-step Gemini extraction
-    const { rawText, structured } = await processReceipt(imagePath);
+    const userContext = {
+      businessName: req.user.businessName,
+      pan: req.user.pan,
+    };
+    const { rawText, structured } = await processReceipt(imagePath, userContext, receiptType);
 
     // Extract date_bs and determine fiscalYear / nepaliMonth
     let dateBS = structured.date_bs || "";
