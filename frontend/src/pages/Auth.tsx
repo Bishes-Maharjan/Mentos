@@ -175,9 +175,10 @@ export default function AuthPage() {
         </div>
 
         {isLogin ? (
-          <form onSubmit={handleLogin} className="receipt-form">
-            <div className="receipt-form__field">
-              <label className="receipt-form__label">PAN (9 digits) *</label>
+          <form onSubmit={handleLogin} className="receipt-form" style={{ display: 'flex', flexDirection: 'column', height: '400px' }}>
+            <div style={{ flex: 1, overflowY: 'auto', paddingRight: '0.5rem' }}>
+              <div className="receipt-form__field">
+                <label className="receipt-form__label">PAN (9 digits) *</label>
               <input
                 type="text"
                 required
@@ -196,16 +197,18 @@ export default function AuthPage() {
                 onChange={(e) => setContact(e.target.value)}
                 placeholder="you@example.com or 9812345678"
               />
+              </div>
             </div>
 
-            <button type="submit" className="btn btn--primary" style={{ width: '100%', marginTop: 'var(--space-4)' }} disabled={loginMutation.isPending}>
+            <button type="submit" className="btn btn--primary" style={{ width: '100%', marginTop: 'var(--space-4)', flexShrink: 0 }} disabled={loginMutation.isPending}>
               {loginMutation.isPending ? 'Loading...' : 'Sign In'}
             </button>
           </form>
         ) : (
-          <form onSubmit={handleRegister} className="receipt-form">
-            <div className="receipt-form__field">
-              <label className="receipt-form__label">Business Name *</label>
+          <form onSubmit={handleRegister} className="receipt-form" style={{ display: 'flex', flexDirection: 'column', height: '400px' }}>
+            <div style={{ flex: 1, overflowY: 'auto', paddingRight: '0.5rem' }}>
+              <div className="receipt-form__field">
+                <label className="receipt-form__label">Business Name *</label>
               <input
                 type="text"
                 required
@@ -369,8 +372,9 @@ export default function AuthPage() {
                 </div>
               </div>
             )}
+            </div>
 
-            <button type="submit" className="btn btn--primary" style={{ width: '100%', marginTop: 'var(--space-6)' }} disabled={registerMutation.isPending}>
+            <button type="submit" className="btn btn--primary" style={{ width: '100%', marginTop: 'var(--space-6)', flexShrink: 0 }} disabled={registerMutation.isPending}>
               {registerMutation.isPending ? 'Loading...' : 'Register'}
             </button>
           </form>

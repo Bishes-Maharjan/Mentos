@@ -40,12 +40,12 @@ export default function VATSummaryCard({ summary, loading }: VATSummaryCardProps
         : 'var(--text-secondary)';
 
   return (
-    <div className="vat-summary">
+    <div className="vat-summary" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div className="vat-summary__header">
         <span className="vat-summary__header-title">VAT Liability Summary</span>
         <span className="vat-summary__header-period">{summary.period}</span>
       </div>
-      <div className="vat-summary__body">
+      <div className="vat-summary__body" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <div className="vat-summary__metrics">
           {/* Output VAT */}
           <div className="vat-summary__metric vat-summary__metric--sales">
@@ -83,7 +83,7 @@ export default function VATSummaryCard({ summary, loading }: VATSummaryCardProps
         </div>
 
         {/* Status line */}
-        <div className="vat-summary__status" style={{ color: netColor }}>
+        <div className="vat-summary__status" style={{ color: netColor, marginTop: 'auto' }}>
           {vatLiability.statusLabel}
         </div>
       </div>

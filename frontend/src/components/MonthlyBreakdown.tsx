@@ -26,9 +26,10 @@ export default function MonthlyBreakdown({ year }: MonthlyBreakdownProps) {
   const maxAmount = Math.max(maxSales, maxPurchases);
 
   return (
-    <div className="card">
-      <h3 className="card__title">Monthly Breakdown ({data.year})</h3>
-      <div className="monthly-breakdown">
+    <div style={{ position: 'relative', height: '100%', minHeight: '380px' }}>
+      <div className="card" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column' }}>
+        <h3 className="card__title">Monthly Breakdown ({data.year})</h3>
+        <div className="monthly-breakdown" style={{ flex: 1, overflowY: 'auto', paddingRight: '0.5rem', minHeight: 0 }}>
         {months.map((m) => (
           <div key={m.month} className="monthly-breakdown__row">
             <div className="monthly-breakdown__label">{m.monthName.substring(0, 3)}</div>
@@ -55,6 +56,7 @@ export default function MonthlyBreakdown({ year }: MonthlyBreakdownProps) {
         <span className="legend-item"><span className="legend-color bg-success"></span> Sales</span>
         <span className="legend-item"><span className="legend-color bg-danger"></span> Purchases</span>
       </div>
+    </div>
     </div>
   );
 }
