@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import FileDropzone from '../components/FileDropzone';
 import ReceiptForm from '../components/ReceiptForm';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { uploadReceipt, updateReceipt } from '../api/client';
+import { uploadReceipt, createReceipt } from '../api/client';
 import type { Receipt, PANValidation } from '../types';
 
 type UploadState = 'idle' | 'processing' | 'review' | 'success';
@@ -31,9 +31,8 @@ export default function Upload() {
       uploadReceipt(file, type),
   });
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Receipt> }) =>
-      updateReceipt(id, data),
+  const createMutation = useMutation({
+    mutationFn: (data: Partial<Receipt>) => createReceipt(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['receipts'] });
       queryClient.invalidateQueries({ queryKey: ['vatSummary'] });
@@ -82,14 +81,15 @@ export default function Upload() {
       if (!resultData) return;
 
       try {
-        const updated = await updateMutation.mutateAsync({ id: resultData.receipt._id, data });
+        const payload = { ...resultData.receipt, ...data };
+        const created = await createMutation.mutateAsync(payload);
         
         setResults(prev => {
           const newArr = [...prev];
           newArr[index] = {
             ...newArr[index],
-            receipt: updated.receipt,
-            panValidation: updated.panValidation,
+            receipt: created.receipt,
+            panValidation: created.panValidation,
             saved: true
           };
           return newArr;
@@ -98,7 +98,7 @@ export default function Upload() {
         toast.error(err.response?.data?.error || 'Failed to save receipt');
       }
     },
-    [results, updateMutation]
+    [results, createMutation]
   );
 
   // Check if all receipts are saved

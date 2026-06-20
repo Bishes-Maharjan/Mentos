@@ -45,11 +45,16 @@ router.post("/register", async (req, res) => {
       isNewBusiness,
       fiscalYearStart,
       latestD2,
+      password,
     } = req.body;
 
     // --- Validation ---
     if (!businessName || !pan) {
       return res.status(400).json({ error: "businessName and pan are required" });
+    }
+
+    if (!password || password.length < 6) {
+      return res.status(400).json({ error: "Password must be at least 6 characters long" });
     }
 
     if (!address) {
@@ -103,6 +108,7 @@ router.post("/register", async (req, res) => {
       vatRegistered: vatRegistered !== false,
       isNewBusiness: newBusiness,
       fiscalYearStart: fiscalYearStart || "",
+      password,
     });
 
     if (phone) user.phone = phone;
@@ -146,26 +152,26 @@ router.post("/register", async (req, res) => {
 });
 
 // ============================================================
-// POST /api/users/login — Login with (email or phone) + PAN
+// POST /api/users/login — Login with (email or phone) + password
 // ============================================================
 // Body:
-//   - pan (required, 9 digits)
 //   - email OR phone (at least one required)
+//   - password (required)
 // ============================================================
 router.post("/login", async (req, res) => {
   try {
-    const { pan, email, phone } = req.body;
+    const { email, phone, password } = req.body;
 
-    if (!pan) {
-      return res.status(400).json({ error: "PAN is required" });
+    if (!password) {
+      return res.status(400).json({ error: "Password is required" });
     }
 
     if (!email && !phone) {
       return res.status(400).json({ error: "Email or phone is required" });
     }
 
-    // Build query: PAN must match + at least one contact field must match
-    const query = { pan };
+    // Build query: at least one contact field must match
+    const query = {};
     if (email && phone) {
       query.$or = [{ email }, { phone }];
     } else if (email) {
@@ -174,10 +180,18 @@ router.post("/login", async (req, res) => {
       query.phone = phone;
     }
 
-    const user = await User.findOne(query);
+    const user = await User.findOne(query).select("+password");
     if (!user) {
-      return res.status(401).json({ error: "Invalid credentials. No matching PAN + contact found." });
+      return res.status(401).json({ error: "Invalid credentials. User not found." });
     }
+
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ error: "Invalid credentials. Incorrect password." });
+    }
+
+    // Remove password from user object before sending to client
+    user.password = undefined;
 
     // Fetch their latest D2 record (if any)
     const latestD2 = await D2.findOne({ userId: user._id }).sort({ fiscalYear: -1, month: -1 });

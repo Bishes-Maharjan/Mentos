@@ -99,21 +99,45 @@ router.post("/upload", auth, upload.single("receipt"), async (req, res) => {
       panValidation = validatePAN(receiptData.partyPAN);
     }
 
-    // Save to MongoDB
-    const receipt = new Receipt(receiptData);
-    await receipt.save();
+    // Assign a temporary ID for the frontend to use during review
+    receiptData._id = "temp-" + Date.now() + "-" + Math.random().toString(36).substr(2, 5);
 
-    res.status(201).json({
-      message: "Receipt uploaded and processed successfully",
-      receipt,
+    res.status(200).json({
+      message: "Receipt extracted successfully",
+      receipt: receiptData,
       panValidation,
     });
   } catch (error) {
     console.error("[Upload Error]", error);
-    res.status(500).json({
-      error: "Failed to process receipt",
-      details: error.message,
-    });
+    res.status(500).json({ error: "Failed to process receipt image", details: error.message });
+  }
+});
+
+// ============================================================
+// POST /api/receipts — Save an extracted receipt after review
+// ============================================================
+router.post("/", auth, async (req, res) => {
+  try {
+    const data = req.body;
+    // ensure userId is correct
+    data.userId = req.user._id;
+    // remove the temporary id so Mongo generates a real ObjectId
+    if (data._id && data._id.startsWith("temp-")) {
+      delete data._id;
+    }
+
+    const receipt = new Receipt(data);
+    await receipt.save();
+
+    let panValidation = null;
+    if (receipt.partyPAN) {
+      panValidation = validatePAN(receipt.partyPAN);
+    }
+
+    res.status(201).json({ message: "Receipt saved successfully", receipt, panValidation });
+  } catch (error) {
+    console.error("[Save Error]", error);
+    res.status(500).json({ error: "Failed to save receipt", details: error.message });
   }
 });
 

@@ -56,7 +56,7 @@ const receiptSchema = new mongoose.Schema(
 );
 
 // Virtual: compute taxable amount (sum of items where VAT is applicable)
-receiptSchema.index({ invoiceNumber: 1, userId: 1 }, { unique: true, sparse: true });
+// receiptSchema.index({ invoiceNumber: 1, userId: 1 }, { unique: true, sparse: true });
 
 receiptSchema.virtual("taxableAmount").get(function () {
   return this.items

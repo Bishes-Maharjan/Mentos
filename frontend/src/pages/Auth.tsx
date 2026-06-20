@@ -13,6 +13,8 @@ export default function AuthPage() {
 
   // Login fields
   const [contact, setContact] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   // Register fields
   const [email, setEmail] = useState('');
@@ -56,8 +58,8 @@ export default function AuthPage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!pan || !contact) {
-      toast.error('PAN and Contact (Email or Phone) are required');
+    if (!contact || !password) {
+      toast.error('Contact and Password are required');
       return;
     }
 
@@ -65,7 +67,7 @@ export default function AuthPage() {
     const loginEmail = isEmail ? contact : undefined;
     const loginPhone = !isEmail ? contact : undefined;
 
-    loginMutation.mutate({ pan, email: loginEmail, phone: loginPhone });
+    loginMutation.mutate({ email: loginEmail, phone: loginPhone, password });
   };
 
   const handleRegister = (e: React.FormEvent) => {
@@ -76,6 +78,11 @@ export default function AuthPage() {
     }
     if (!email || !phone) {
       toast.error('Both Email and Phone are required for registration');
+      return;
+    }
+
+    if (!password || password !== confirmPassword) {
+      toast.error('Passwords do not match or are empty');
       return;
     }
 
@@ -91,6 +98,7 @@ export default function AuthPage() {
       address,
       email,
       phone,
+      password,
       isNewBusiness,
     };
 
@@ -178,25 +186,24 @@ export default function AuthPage() {
           <form onSubmit={handleLogin} className="receipt-form" style={{ display: 'flex', flexDirection: 'column', height: '400px' }}>
             <div style={{ flex: 1, overflowY: 'auto', paddingRight: '0.5rem' }}>
               <div className="receipt-form__field">
-                <label className="receipt-form__label">PAN (9 digits) *</label>
-              <input
-                type="text"
-                required
-                pattern="\d{9}"
-                value={pan}
-                onChange={(e) => setPan(e.target.value)}
-                placeholder="e.g. 123456789"
-              />
-            </div>
-            <div className="receipt-form__field">
-              <label className="receipt-form__label">Email or Phone *</label>
-              <input
-                type="text"
-                required
-                value={contact}
-                onChange={(e) => setContact(e.target.value)}
-                placeholder="you@example.com or 9812345678"
-              />
+                <label className="receipt-form__label">Email or Phone *</label>
+                <input
+                  type="text"
+                  required
+                  value={contact}
+                  onChange={(e) => setContact(e.target.value)}
+                  placeholder="you@example.com or 9812345678"
+                />
+              </div>
+              <div className="receipt-form__field">
+                <label className="receipt-form__label">Password *</label>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                />
               </div>
             </div>
 
@@ -259,6 +266,31 @@ export default function AuthPage() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="e.g. 9812345678"
+                />
+              </div>
+            </div>
+
+            <div className="receipt-form__grid">
+              <div className="receipt-form__field">
+                <label className="receipt-form__label">Password *</label>
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="At least 6 characters"
+                />
+              </div>
+              <div className="receipt-form__field">
+                <label className="receipt-form__label">Confirm Password *</label>
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm password"
                 />
               </div>
             </div>

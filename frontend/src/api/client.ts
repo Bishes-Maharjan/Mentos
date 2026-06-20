@@ -54,6 +54,13 @@ export async function getReceipt(id: string): Promise<Receipt> {
   return res.data;
 }
 
+export async function createReceipt(
+  data: Partial<Receipt>
+): Promise<{ message: string; receipt: Receipt; panValidation: PANValidation | null }> {
+  const res = await api.post('/api/receipts', data);
+  return res.data;
+}
+
 export async function updateReceipt(
   id: string,
   data: Partial<Receipt>
@@ -212,6 +219,7 @@ export interface RegisterPayload {
   province?: number;
   phone?: string;
   email?: string;
+  password?: string;
   vatRegistered?: boolean;
   isNewBusiness: boolean;
   fiscalYearStart?: string;
@@ -232,7 +240,7 @@ export async function registerUser(data: RegisterPayload) {
   return res.data;
 }
 
-export async function loginUser(data: { pan: string; email?: string; phone?: string }) {
+export async function loginUser(data: { email?: string; phone?: string; password?: string }) {
   const res = await api.post('/api/users/login', data);
   return res.data;
 }
