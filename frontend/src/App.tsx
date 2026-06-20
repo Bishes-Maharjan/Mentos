@@ -56,10 +56,12 @@ export default function App() {
             <Route path="/annex/sales" element={<AnnexSales />} />
             <Route path="/annex/purchases" element={<AnnexPurchases />} />
             <Route path="/tax-return" element={<TaxReturn />} />
-            <Route path="/ird" element={<IRDVatForm />} />
-            <Route path="/ird/transactions" element={<IRDTransactions />} />
-            <Route path="/ird/success" element={<IRDSuccess />} />
           </Route>
+
+          {/* IRD Portal - Standalone Layout */}
+          <Route path="/ird" element={<IRDVatForm />} />
+          <Route path="/ird/transactions" element={<IRDTransactions />} />
+          <Route path="/ird/success" element={<IRDSuccess />} />
         </Routes>
       )}
     </>
