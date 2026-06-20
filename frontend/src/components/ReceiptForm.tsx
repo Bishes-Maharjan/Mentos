@@ -86,7 +86,40 @@ export default function ReceiptForm({
   }, [partyName, partyPAN, invoiceNumber, dateBS, type, items, subtotal, vatAmount, total, onSave, isNew, transactionType]);
 
   return (
-    <div className="card card--glass">
+    <div className="card custom-white-card">
+      <style>{`
+        .custom-white-card {
+          background: #ffffff !important;
+          color: #0f172a !important;
+        }
+        .custom-white-card label, 
+        .custom-white-card h2, 
+        .custom-white-card h3, 
+        .custom-white-card th, 
+        .custom-white-card td {
+          color: #0f172a !important;
+        }
+        .custom-white-card input, 
+        .custom-white-card select {
+          background: #ffffff;
+          color: #0f172a;
+          border: 2px solid #cbd5e1;
+        }
+        .custom-white-card input:focus, 
+        .custom-white-card select:focus {
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+        .custom-white-card .receipt-form__header {
+          border-bottom-color: #e2e8f0;
+        }
+        .custom-white-card .items-table th {
+          border-bottom-color: #e2e8f0;
+        }
+        .custom-white-card .receipt-form__totals {
+          border-top-color: #e2e8f0;
+        }
+      `}</style>
       <div className="receipt-form">
         <div className="receipt-form__header">
           <h2 className="receipt-form__title">
@@ -97,17 +130,17 @@ export default function ReceiptForm({
 
         {receipt.notes && receipt.notes.length > 0 && (
           <div style={{
-            background: 'rgba(245, 158, 11, 0.1)',
-            border: '1px solid var(--warning)',
+            background: 'rgba(239, 68, 68, 0.05)',
+            border: '2px solid var(--danger)',
             padding: 'var(--space-4)',
             borderRadius: 'var(--radius-md)',
             marginBottom: 'var(--space-4)'
           }}>
-            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--warning)', marginBottom: '0.5rem', fontSize: 'var(--font-size-sm)' }}>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--danger)', marginBottom: '0.5rem', fontSize: 'var(--font-size-sm)' }}>
               <AlertTriangle size={18} />
               Compliance Notes
             </h3>
-            <ul style={{ margin: 0, paddingLeft: '1.5rem', fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)' }}>
+            <ul style={{ margin: 0, paddingLeft: '1.5rem', fontSize: 'var(--font-size-sm)', color: '#7f1d1d' }}>
               {receipt.notes.map((note, i) => (
                 <li key={i} style={{ marginBottom: '0.25rem' }}>{note}</li>
               ))}

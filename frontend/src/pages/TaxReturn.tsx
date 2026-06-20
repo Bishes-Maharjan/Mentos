@@ -114,7 +114,7 @@ export default function TaxReturn() {
 
       {/* Calculate Form Panel */}
       {showForm && (
-        <div className="card card--glass" style={{ marginBottom: 'var(--space-6)', padding: 'var(--space-6)' }}>
+        <div className="card" style={{ marginBottom: 'var(--space-6)', padding: 'var(--space-6)', background: '#ffffff' }}>
           <h3 style={{ marginBottom: 'var(--space-4)', fontSize: 'var(--font-size-lg)', fontWeight: 600 }}>
             Calculate D2 for a specific period
           </h3>
@@ -262,7 +262,7 @@ export default function TaxReturn() {
                       </tr>
                       {expandedRow === doc._id && (
                         <tr>
-                          <td colSpan={9} style={{ padding: 0, borderBottom: '2px solid var(--border)' }}>
+                          <td colSpan={9} style={{ padding: 0, borderBottom: '1px solid var(--border)' }}>
                             <D2RowDetail d2Id={doc._id} />
                           </td>
                         </tr>

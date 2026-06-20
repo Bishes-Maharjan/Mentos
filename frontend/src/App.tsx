@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
@@ -54,18 +54,20 @@ export default function App() {
         <Route path="/ird/transactions" element={<IRDTransactions />} />
         <Route path="/ird/success" element={<IRDSuccess />} />
 
-        <Route path="/" element={<Landing />} />
-        <Route path="/assign" element={<AuthPage />} />
-        {/* Main App Routes */}
+        {/* Public Routes */}
+        <Route path="/" element={!user ? <Landing /> : <Navigate to="/dashboard" replace />} />
+        <Route path="/assign" element={!user ? <AuthPage /> : <Navigate to="/dashboard" replace />} />
+        
+        {/* Protected App Routes */}
         <Route
           path="/*"
           element={
             !user ? (
-              <AuthPage />
+              <Navigate to="/assign" replace />
             ) : (
               <Routes>
                 <Route element={<Layout />}>
-                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/upload" element={<Upload />} />
                   <Route path="/receipts/:id" element={<ReceiptDetail />} />
                   <Route path="/annex/sales" element={<AnnexSales />} />
@@ -73,6 +75,7 @@ export default function App() {
                   <Route path="/tax-return" element={<TaxReturn />} />
                   <Route path="/d2/:id" element={<D2Detail />} />
                   <Route path="/me" element={<Me />} />
+                  <Route path="*" element={<Navigate to="/dashboard" replace />} />
                 </Route>
               </Routes>
             )

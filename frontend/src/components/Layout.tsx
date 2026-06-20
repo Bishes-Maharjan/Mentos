@@ -3,7 +3,7 @@ import { LayoutDashboard, Upload, FileText, ShoppingCart, LogOut, User } from 'l
 import { useAuth } from '../context/AuthContext';
 
 const navItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/upload', icon: Upload, label: 'Upload Receipt' },
   { to: '/annex/sales', icon: FileText, label: 'Sales Register' },
   { to: '/annex/purchases', icon: ShoppingCart, label: 'Purchase Register' },

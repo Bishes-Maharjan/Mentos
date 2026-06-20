@@ -102,7 +102,7 @@ router.get("/summary", auth, async (req, res) => {
 router.get("/monthly-breakdown", auth, async (req, res) => {
   try {
     const { year } = req.query;
-    const y = parseInt(year) || 2081;
+    const y = parseInt(year) || 2082;
 
     const bsMonthNames = [
       "Baishakh", "Jestha", "Ashadh", "Shrawan", "Bhadra", "Ashwin",

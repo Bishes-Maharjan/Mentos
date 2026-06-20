@@ -130,7 +130,7 @@ export default function D2Detail() {
           </p>
         </div>
         <div style={{ 
-          borderLeft: '2px solid var(--border-color)', 
+          borderLeft: '1px solid var(--border-color)', 
           paddingLeft: 'var(--space-4)'
         }}>
           <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>Net VAT Payable</p>

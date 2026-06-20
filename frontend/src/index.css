@@ -5,14 +5,14 @@
 /* --- CSS Custom Properties (Light Finance Palette) --- */
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap");
 :root {
-  /* Colors — Light / Finance Vibes */
-  --bg-primary: #f8fbff; /* light sky background */
-  --bg-secondary: #ffffff; /* panels */
-  --bg-tertiary: #f4f8ff; /* inputs/cards */
-  --bg-hover: #e7efff; /* subtle hover */
+  /* Colors — Pure White Vibes */
+  --bg-primary: #ffffff; /* flat white background */
+  --bg-secondary: #ffffff; /* flat white panels */
+  --bg-tertiary: #ffffff; /* flat white inputs/cards */
+  --bg-hover: #f8fafc; /* very subtle hover */
 
-  --text-primary: #0f172a; /* rich dark navy */
-  --text-secondary: #475569;
+  --text-primary: #000000; /* deep black for contrast */
+  --text-secondary: #334155;
   --text-tertiary: #64748b;
 
   --accent-primary: #2563eb; /* bright blue accent */
@@ -1106,7 +1106,7 @@ textarea::placeholder {
   flex: 1;
   padding: var(--space-4);
   border-radius: var(--radius-lg);
-  border: 2px solid var(--border);
+  border: 1px solid var(--border);
   background: var(--bg-secondary);
   color: var(--text-secondary);
   font-size: var(--font-size-base);
@@ -1447,7 +1447,7 @@ textarea::placeholder {
   letter-spacing: 0.05em;
   color: var(--text-secondary);
   white-space: nowrap;
-  border-bottom: 2px solid var(--border);
+  border-bottom: 1px solid var(--border);
 }
 
 .annex-table th .th-nepali {
@@ -1481,7 +1481,7 @@ textarea::placeholder {
 
 .annex-table__total-row td {
   font-weight: 700;
-  border-top: 2px solid var(--border-hover);
+  border-top: 1px solid var(--border-hover);
   border-bottom: none;
   padding-top: var(--space-4);
 }
@@ -1821,7 +1821,7 @@ textarea::placeholder {
 }
 
 .ird-btn--secondary {
-  background: #f3f4f6;
+  background: #ffffff;
   color: #374151;
   border: 1px solid #9ca3af;
 }
@@ -1905,14 +1905,14 @@ textarea::placeholder {
 .ird-txn-excel-row input[type="text"] {
   flex: 1;
   border: 1px solid #9ca3af;
-  background: #f3f4f6;
+  background: #ffffff;
   padding: 0.25rem 0.5rem;
   font-size: 0.875rem;
 }
 
 .ird-txn-excel-btn {
   border: 1px solid #9ca3af;
-  background: #f3f4f6;
+  background: #ffffff;
   padding: 0.25rem 0.75rem;
   font-size: 0.875rem;
   color: #6b7280;
@@ -1973,7 +1973,7 @@ textarea::placeholder {
 }
 
 .ird-txn-table th {
-  background: #f0f4f8;
+  background: #ffffff;
   border: 1px solid #d1d5db;
   padding: 0.25rem 0.5rem;
   text-align: left;
