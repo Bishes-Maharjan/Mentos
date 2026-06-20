@@ -1221,6 +1221,382 @@ input::placeholder, textarea::placeholder {
 }
 
 /* ============================================================
+   IRD Government Portal (Dummy)
+   ============================================================ */
+.ird-page {
+  min-height: calc(100vh - 64px);
+  background: #ffffff;
+  padding: var(--space-6);
+  border-radius: var(--radius-xl);
+  color: #1f2937;
+}
+
+.ird-page input,
+.ird-page select,
+.ird-page textarea {
+  background: #ffffff;
+  color: #1f2937;
+  border-color: #9ca3af;
+  border-radius: 0;
+}
+
+.ird-page input:focus,
+.ird-page select:focus {
+  border-color: #3b82f6;
+  box-shadow: none;
+}
+
+.ird-container {
+  max-width: 72rem;
+  margin: 0 auto;
+}
+
+.ird-instructions {
+  margin-bottom: 0.75rem;
+  padding: 0 0.5rem;
+  font-size: 0.8125rem;
+  line-height: 1.7;
+  color: #1f2937;
+}
+
+.ird-instructions-en {
+  font-style: italic;
+  color: #4b5563;
+}
+
+/* --- Main VAT table --- */
+.ird-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff4d6;
+}
+
+.ird-table th,
+.ird-table td {
+  border: 1px solid #f59e0b;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  white-space: normal;
+}
+
+.ird-table thead th {
+  background: #ffe9a8;
+  font-weight: 500;
+  padding: 0.5rem 0.75rem;
+}
+
+.ird-table .ird-th-sub {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 400;
+  font-style: italic;
+  color: #4b5563;
+}
+
+.ird-table .ird-section-header td {
+  background: #ffe9a8;
+  font-weight: 500;
+  padding: 0.375rem 0.75rem;
+}
+
+.ird-table .ird-data-row td {
+  background: #fff4d6;
+}
+
+.ird-num-input {
+  width: 100%;
+  border: 1px solid #9ca3af;
+  background: #ffffff;
+  padding: 0.25rem 0.5rem;
+  text-align: right;
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.ird-num-input:focus {
+  border-color: #3b82f6;
+}
+
+.ird-num-input--readonly {
+  background: #ffffff;
+  cursor: default;
+}
+
+/* --- Summary table (rows 5-9) --- */
+.ird-summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #eef2f7;
+  margin-top: 0;
+}
+
+.ird-summary-table td {
+  border: 1px solid #d1d5db;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.ird-summary-table td:first-child {
+  width: 65%;
+}
+
+/* --- Buttons --- */
+.ird-btn {
+  padding: 0.5rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.ird-btn--primary {
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+}
+
+.ird-btn--primary:hover {
+  background: #1d4ed8;
+}
+
+.ird-btn--secondary {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #9ca3af;
+}
+
+.ird-btn--secondary:hover {
+  background: #e5e7eb;
+}
+
+.ird-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.ird-actions--between {
+  justify-content: space-between;
+}
+
+/* --- Transactions page --- */
+.ird-txn-wrapper {
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+}
+
+.ird-txn-header {
+  border-bottom: 1px solid #d1d5db;
+  background: linear-gradient(to bottom, #f5f9fd, #dbe7f3);
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.ird-txn-body {
+  padding: 1rem;
+}
+
+.ird-txn-note {
+  text-align: center;
+  font-size: 0.8125rem;
+  color: #1f2937;
+}
+
+.ird-txn-note-en {
+  font-style: italic;
+  color: #4b5563;
+}
+
+.ird-txn-checkbox-row {
+  margin-top: 0.75rem;
+}
+
+.ird-txn-checkbox-label {
+  margin-left: 1rem;
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.ird-txn-checkbox-label input[type="checkbox"] {
+  width: auto;
+  margin-top: 0.25rem;
+}
+
+.ird-txn-excel-row {
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ird-txn-excel-row label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.ird-txn-excel-row input[type="text"] {
+  flex: 1;
+  border: 1px solid #9ca3af;
+  background: #f3f4f6;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+.ird-txn-excel-btn {
+  border: 1px solid #9ca3af;
+  background: #f3f4f6;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.ird-txn-excel-btn--download {
+  background: linear-gradient(to bottom, #ffffff, #e5e7eb);
+  color: #1f2937;
+}
+
+.ird-txn-upload-note {
+  margin-top: 0.5rem;
+  font-size: 0.8125rem;
+  color: #1f2937;
+}
+
+.ird-txn-fieldset {
+  margin-top: 1rem;
+  border: 1px solid #9ca3af;
+  padding: 0.5rem;
+}
+
+.ird-txn-fieldset legend {
+  padding: 0 0.5rem;
+  font-size: 0.875rem;
+}
+
+.ird-txn-toolbar {
+  display: flex;
+  gap: 1rem;
+  border: 1px solid #d1d5db;
+  background: linear-gradient(to bottom, #f5f9fd, #dbe7f3);
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.ird-txn-toolbar button {
+  color: #1d4ed8;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.ird-txn-toolbar button:hover {
+  text-decoration: underline;
+}
+
+.ird-txn-toolbar button.ird-txn-toolbar-muted {
+  color: #374151;
+}
+
+.ird-txn-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.ird-txn-table th {
+  background: #f0f4f8;
+  border: 1px solid #d1d5db;
+  padding: 0.25rem 0.5rem;
+  text-align: left;
+  font-weight: 500;
+}
+
+.ird-txn-table td {
+  border: 1px solid #d1d5db;
+  padding: 0.25rem;
+}
+
+.ird-txn-table input,
+.ird-txn-table select {
+  width: 100%;
+  border: 1px solid #9ca3af;
+  padding: 0.125rem 0.25rem;
+  font-size: 0.875rem;
+}
+
+.ird-txn-table .ird-txn-delete-btn {
+  color: #dc2626;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+/* --- Success page --- */
+.ird-success-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 1.5rem;
+}
+
+.ird-success-card {
+  width: 100%;
+  max-width: 32rem;
+  border-radius: 0.5rem;
+  border: 1px solid #86efac;
+  background: #ffffff;
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.ird-success-icon {
+  margin: 0 auto 1rem;
+  width: 4rem;
+  height: 4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #dcfce7;
+  font-size: 1.875rem;
+  color: #16a34a;
+}
+
+.ird-success-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.ird-success-subtitle {
+  margin-top: 0.25rem;
+  font-size: 1.125rem;
+  color: #374151;
+}
+
+.ird-success-desc {
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.ird-success-desc em {
+  font-style: italic;
+}
+
+/* ============================================================
    Responsive
    ============================================================ */
 @media (max-width: 1024px) {

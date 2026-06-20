@@ -8,6 +8,9 @@ import ReceiptDetail from './pages/ReceiptDetail';
 import AnnexSales from './pages/AnnexSales';
 import AnnexPurchases from './pages/AnnexPurchases';
 import TaxReturn from './pages/TaxReturn';
+import IRDVatForm from './pages/IRDVatForm';
+import IRDTransactions from './pages/IRDTransactions';
+import IRDSuccess from './pages/IRDSuccess';
 import AuthPage from './pages/Auth';
 
 export default function App() {
@@ -53,6 +56,9 @@ export default function App() {
             <Route path="/annex/sales" element={<AnnexSales />} />
             <Route path="/annex/purchases" element={<AnnexPurchases />} />
             <Route path="/tax-return" element={<TaxReturn />} />
+            <Route path="/ird" element={<IRDVatForm />} />
+            <Route path="/ird/transactions" element={<IRDTransactions />} />
+            <Route path="/ird/success" element={<IRDSuccess />} />
           </Route>
         </Routes>
       )}
