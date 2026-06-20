@@ -1019,6 +1019,10 @@ input::placeholder, textarea::placeholder {
   background: var(--bg-hover);
 }
 
+.d2-row-hover:hover {
+  background-color: var(--bg-hover);
+}
+
 .annex-table__total-row td {
   font-weight: 700;
   border-top: 2px solid var(--border-hover);

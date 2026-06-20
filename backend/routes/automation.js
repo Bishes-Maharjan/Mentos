@@ -2,6 +2,7 @@ const express = require("express");
 const { chromium } = require("playwright");
 const path = require("path");
 const fs = require("fs");
+const ExcelJS = require("exceljs");
 const { auth } = require("../middleware/auth");
 const D2 = require("../models/D2");
 const Receipt = require("../models/Receipt");
@@ -11,7 +12,7 @@ const router = express.Router();
 router.post("/ird", auth, async (req, res) => {
   let browser;
   try {
-    const { fiscalYear, month } = req.body;
+    const { fiscalYear, month, mode } = req.body; // mode: 'manual' | 'auto'
 
     if (!fiscalYear || !month) {
       return res.status(400).json({ error: "fiscalYear and month are required" });
@@ -136,79 +137,91 @@ router.post("/ird", auth, async (req, res) => {
     };
 
     // ── Section 1: Sales ──
-    // 1.1 Taxable Sales → karobar (transaction value)
     await setField("१.१_k", taxableSales);
-    // 1.1 Taxable Sales → bikriDebit (tax debit on sales)
     await setField("१.१_d", totalOutputVat);
-
-    // 1.2 Exports → karobar
     await setField("१.२_k", exportSales);
-
-    // 1.3 Exempt Sales → karobar
     await setField("१.३_k", exemptSales);
 
     // ── Section 2: Purchases ──
-    // 2.1 Taxable Purchases → karobar
     await setField("२.१_k", taxablePurchases);
-    // 2.1 Taxable Purchases → kharidCredit (tax credit on purchases)
     await setField("२.१_c", totalInputVat);
-
-    // 2.3 Exempt Purchases → karobar
     await setField("२.३_k", exemptPurchases);
 
     // ── Summary Section ──
-    // 6. Previous month credit brought forward
     await setField("6", prevCredit);
 
-    // Give it a moment for the user to see the filled values
-    await page.waitForTimeout(2000);
-
-    // Proceed to next page (IRD Transactions)
-    await page.click('button.ird-btn--primary');
+    // ═══════════════════════════════════════════════════════════
+    // PHASE 1 PAUSE: VAT form is filled. Wait for user to review
+    // and manually click "Proceed" to go to transactions page.
+    // ═══════════════════════════════════════════════════════════
+    console.log("⏸  PHASE 1: VAT form filled. Waiting for user to review and click Proceed...");
     
-    // Wait for the next page to load and the new React bridge to initialize
-    await page.waitForTimeout(1000);
+    // Wait for the user to navigate to /ird/transactions by clicking Proceed themselves
+    await page.waitForURL('**/ird/transactions', { timeout: 300000 }); // 5 min timeout
+    console.log("▶️  User proceeded to transactions page!");
+
+    // Wait for the transactions React bridge to initialize
     await page.waitForFunction(() => window.__irdTxnReady === true, { timeout: 10000 });
 
-    // 5. Fill Transactions Page visually line by line
-    const setTxnField = async (index, key, value) => {
-      if (value == null) return;
-      await page.evaluate(({ i, k, v }) => {
-        window.__setIRDTxnValue(i, k, v);
-      }, { i: index, k: key, v: value.toString() });
-      await page.waitForTimeout(500); // Visual delay
-    };
+    // ── PHASE 2: Build and upload Excel ──
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("Audit Details");
 
-    const addTxnRow = async () => {
-      await page.evaluate(() => window.__addIRDTxnRow());
-      await page.waitForTimeout(400);
-    };
+    sheet.columns = [
+      { header: "SNo / क्र.सं.", key: "sn" },
+      { header: "PAN / प्यान", key: "pan" },
+      { header: "TradeName / व्यापारको नाम", key: "tradeName" },
+      { header: "TradeNameType / प्रकार", key: "tradeNameType" },
+      { header: "SORP", key: "sorp" },
+      { header: "TaxableAmount / करयोग्य रकम", key: "taxableAmount" },
+      { header: "ExemptedAmount / छुट रकम", key: "exemptedAmount" },
+      { header: "Remarks / कैफियत", key: "remarks" }
+    ];
 
-    // As per user instructions:
-    // 1. PAN and Trade Name come from logged-in user details
-    // 2. Taxable amount = (output tax - input tax) - credit carry forward
-    const userPan = req.user.pan || "";
-    const userTradeName = req.user.businessName || "";
-    const calculatedTaxableAmount = (totalOutputVat - totalInputVat) - prevCredit;
+    receipts.forEach((r, index) => {
+      const taxableAmount = r.items.filter((i) => i.vatApplicable).reduce((sum, i) => sum + i.amount, 0);
+      const exemptAmount = r.items.filter((i) => !i.vatApplicable).reduce((sum, i) => sum + i.amount, 0);
 
-    // Fill exactly ONE row with the consolidated calculation
-    await setTxnField(0, "pan", userPan);
-    await setTxnField(0, "tradeName", userTradeName);
-    await setTxnField(0, "tradeNameType", "Company");
-    await setTxnField(0, "sorp", "S"); // Default to Sales
-    await setTxnField(0, "taxableAmount", calculatedTaxableAmount);
+      sheet.addRow({
+        sn: index + 1,
+        pan: r.partyPAN || "",
+        tradeName: r.partyName || "",
+        tradeNameType: "Company",
+        sorp: r.type === "sale" ? "Sales" : "Purchase",
+        taxableAmount: taxableAmount,
+        exemptedAmount: exemptAmount,
+        remarks: ""
+      });
+    });
 
-    // ── PAUSE AUTOMATION FOR MANUAL ENTRY ──
-    console.log("⏸  Pausing automation for manual user review/entry...");
-    await page.evaluate(() => window.pauseForManualEntry());
-    console.log("▶️  Automation resumed by user!");
+    // Write to a temporary file
+    const tmpDir = path.join(__dirname, "..", "tmp");
+    if (!fs.existsSync(tmpDir)) {
+      fs.mkdirSync(tmpDir, { recursive: true });
+    }
+    const tempExcelPath = path.join(tmpDir, `d2_auto_${req.user._id}_${Date.now()}.xlsx`);
+    await workbook.xlsx.writeFile(tempExcelPath);
+
+    console.log("📥 Auto-selecting Excel file and loading...");
+    const fileInput = page.locator('.ird-excel-input');
+    await fileInput.setInputFiles(tempExcelPath);
     
     await page.waitForTimeout(500);
+    await page.click('#ird-load-btn');
+    await page.waitForTimeout(1000);
 
-    // Next page has "Proceed" button again to success
-    if (await page.locator('.ird-actions--between .ird-btn--primary').count() > 0) {
-      await page.click('.ird-actions--between .ird-btn--primary');
-    }
+    // Cleanup temp file
+    try { fs.unlinkSync(tempExcelPath); } catch(e) {}
+
+    // ═══════════════════════════════════════════════════════════
+    // PHASE 2 PAUSE: Excel is loaded. Wait for user to review
+    // and manually click "Proceed" to go to success page.
+    // ═══════════════════════════════════════════════════════════
+    console.log("⏸  PHASE 2: Excel loaded into transactions. Waiting for user to review and click Proceed...");
+
+    // Wait for the user to navigate to /ird/success by clicking Proceed themselves
+    await page.waitForURL('**/ird/success', { timeout: 300000 }); // 5 min timeout
+    console.log("▶️  User proceeded to success page!");
     
     await page.waitForTimeout(1500);
 
@@ -223,6 +236,14 @@ router.post("/ird", auth, async (req, res) => {
     await page.screenshot({ path: screenshotPath, fullPage: true });
 
     await browser.close();
+
+    // Mark D2 as submitted
+    await D2.findOneAndUpdate(
+      { userId: req.user._id, fiscalYear, month: parseInt(month) },
+      { $set: { isSubmitted: true } },
+      { new: true }
+    );
+    console.log("✅ D2 marked as submitted.");
 
     res.json({
       message: "IRD Automation completed successfully",

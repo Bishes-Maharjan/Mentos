@@ -11,6 +11,7 @@ import TaxReturn from './pages/TaxReturn';
 import IRDVatForm from './pages/IRDVatForm';
 import IRDTransactions from './pages/IRDTransactions';
 import IRDSuccess from './pages/IRDSuccess';
+import D2Detail from './pages/D2Detail';
 import AuthPage from './pages/Auth';
 
 export default function App() {
@@ -66,6 +67,7 @@ export default function App() {
                   <Route path="/annex/sales" element={<AnnexSales />} />
                   <Route path="/annex/purchases" element={<AnnexPurchases />} />
                   <Route path="/tax-return" element={<TaxReturn />} />
+                  <Route path="/d2/:id" element={<D2Detail />} />
                 </Route>
               </Routes>
             )

@@ -110,3 +110,24 @@ export interface Pagination {
   limit: number;
   pages: number;
 }
+
+export interface D2Return {
+  _id: string;
+  fiscalYear: string;
+  month: number;
+  totalSales: number;
+  totalPurchases: number;
+  outputVAT: number;
+  inputVAT: number;
+  creditBroughtForward: number;
+  netVATPayable: number;
+  isSubmitted: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface D2AuditDetail {
+  d2: D2Return;
+  sales: Receipt[];
+  purchases: Receipt[];
+}

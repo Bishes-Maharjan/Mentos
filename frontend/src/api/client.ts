@@ -6,6 +6,7 @@ import type {
   VATSummary,
   MonthData,
   AnnexResponse,
+  D2AuditDetail,
 } from '../types';
 
 const api = axios.create({
@@ -156,6 +157,24 @@ export async function getD2Returns(
 ): Promise<D2Return[]> {
   const res = await api.get('/api/d2', { params });
   return res.data;
+}
+
+export async function getD2Detail(id: string): Promise<D2AuditDetail> {
+  const res = await api.get(`/api/d2/${id}`);
+  return res.data;
+}
+
+export async function downloadD2Export(id: string, fiscalYear: string, month: number): Promise<void> {
+  const res = await api.get(`/api/d2/${id}/export`, {
+    responseType: 'blob',
+  });
+  const filename = `D2_Audit_${fiscalYear}_M${month}.xlsx`.replace(/[/]/g, '-');
+  const url = URL.createObjectURL(res.data);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 export async function calculateD2(data: {

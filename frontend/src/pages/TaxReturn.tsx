@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { FileText, CheckCircle, Clock, Trash2, Calculator, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getD2Returns, calculateD2, deleteD2Return, automateIRD, formatNPR } from '../api/client';
 import LoadingSpinner from '../components/LoadingSpinner';
+import D2RowDetail from '../components/D2RowDetail';
 
 const bsMonthNames = [
   "Baishakh", "Jestha", "Ashadh", "Shrawan", "Bhadra", "Ashwin",
@@ -25,6 +26,7 @@ export default function TaxReturn() {
   const [showForm, setShowForm] = useState(false);
   const [formFY, setFormFY] = useState(fiscalYearOptions[2]); // default current-ish year
   const [formMonth, setFormMonth] = useState(1);
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
   const { data: returns, isLoading } = useQuery({
     queryKey: ['d2Returns'],
@@ -197,62 +199,75 @@ export default function TaxReturn() {
                   const isCredit = doc.netVATPayable < 0;
                   const monthName = doc.month >= 1 && doc.month <= 12 ? bsMonthNames[doc.month - 1] : String(doc.month);
                   return (
-                    <tr key={doc._id}>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                          <FileText size={16} style={{ color: 'var(--text-tertiary)', flexShrink: 0 }} />
-                          <span style={{ fontWeight: 500 }}>{doc.fiscalYear}</span>
-                          <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>
-                            ({monthName})
+                    <React.Fragment key={doc._id}>
+                      <tr 
+                        onClick={() => setExpandedRow(prev => prev === doc._id ? null : doc._id)} 
+                        style={{ cursor: 'pointer' }}
+                        className="d2-row-hover"
+                      >
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                            <FileText size={16} style={{ color: 'var(--text-tertiary)', flexShrink: 0 }} />
+                            <span style={{ fontWeight: 500 }}>{doc.fiscalYear}</span>
+                            <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--font-size-sm)' }}>
+                              ({monthName})
+                            </span>
+                          </div>
+                        </td>
+                        <td className="annex-table__amount">{formatNPR(doc.totalSales)}</td>
+                        <td className="annex-table__amount">{formatNPR(doc.totalPurchases)}</td>
+                        <td className="annex-table__amount">{formatNPR(doc.outputVAT)}</td>
+                        <td className="annex-table__amount">{formatNPR(doc.inputVAT)}</td>
+                        <td className="annex-table__amount" style={{ color: 'var(--text-secondary)' }}>
+                          {formatNPR(doc.creditBroughtForward)}
+                        </td>
+                        <td className="annex-table__amount">
+                          <span style={{
+                            fontWeight: 600,
+                            color: isCredit ? 'var(--primary)' : 'var(--danger)'
+                          }}>
+                            {isCredit ? `(${formatNPR(Math.abs(doc.netVATPayable))})` : formatNPR(doc.netVATPayable)}
                           </span>
-                        </div>
-                      </td>
-                      <td className="annex-table__amount">{formatNPR(doc.totalSales)}</td>
-                      <td className="annex-table__amount">{formatNPR(doc.totalPurchases)}</td>
-                      <td className="annex-table__amount">{formatNPR(doc.outputVAT)}</td>
-                      <td className="annex-table__amount">{formatNPR(doc.inputVAT)}</td>
-                      <td className="annex-table__amount" style={{ color: 'var(--text-secondary)' }}>
-                        {formatNPR(doc.creditBroughtForward)}
-                      </td>
-                      <td className="annex-table__amount">
-                        <span style={{
-                          fontWeight: 600,
-                          color: isCredit ? 'var(--primary)' : 'var(--danger)'
-                        }}>
-                          {isCredit ? `(${formatNPR(Math.abs(doc.netVATPayable))})` : formatNPR(doc.netVATPayable)}
-                        </span>
-                      </td>
-                      <td style={{ textAlign: 'center' }}>
-                        {doc.isSubmitted ? (
-                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--primary)', fontSize: 'var(--font-size-sm)', background: 'var(--primary-muted)', padding: '2px 8px', borderRadius: '12px' }}>
-                            <CheckCircle size={14} /> Submitted
-                          </div>
-                        ) : (
-                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--warning)', fontSize: 'var(--font-size-sm)', background: 'rgba(245, 158, 11, 0.1)', padding: '2px 8px', borderRadius: '12px' }}>
-                            <Clock size={14} /> Pending
-                          </div>
-                        )}
-                      </td>
-                      <td style={{ textAlign: 'center', display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                        <button
-                          className="btn btn--primary btn--sm"
-                          onClick={() => handleAutomate(doc.fiscalYear, doc.month)}
-                          disabled={autoMutation.isPending}
-                          title="Automate IRD Entry"
-                          style={{ padding: '0.25rem 0.5rem', fontSize: '12px' }}
-                        >
-                          {autoMutation.isPending && autoMutation.variables?.month === doc.month && autoMutation.variables?.fiscalYear === doc.fiscalYear ? '...' : 'Automate IRD'}
-                        </button>
-                        <button
-                          className="btn btn--danger btn--sm"
-                          onClick={() => handleDelete(doc._id, doc.fiscalYear, monthName)}
-                          disabled={deleteMutation.isPending}
-                          title="Delete this return"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </td>
-                    </tr>
+                        </td>
+                        <td style={{ textAlign: 'center' }}>
+                          {doc.isSubmitted ? (
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--primary)', fontSize: 'var(--font-size-sm)', background: 'var(--primary-muted)', padding: '2px 8px', borderRadius: '12px' }}>
+                              <CheckCircle size={14} /> Submitted
+                            </div>
+                          ) : (
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--warning)', fontSize: 'var(--font-size-sm)', background: 'rgba(245, 158, 11, 0.1)', padding: '2px 8px', borderRadius: '12px' }}>
+                              <Clock size={14} /> Pending
+                            </div>
+                          )}
+                        </td>
+                        <td style={{ textAlign: 'center', display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                          <button
+                            className="btn btn--primary btn--sm"
+                            onClick={(e) => { e.stopPropagation(); handleAutomate(doc.fiscalYear, doc.month); }}
+                            disabled={autoMutation.isPending}
+                            title="Automate IRD Entry"
+                            style={{ padding: '0.25rem 0.5rem', fontSize: '12px' }}
+                          >
+                            {autoMutation.isPending && autoMutation.variables?.month === doc.month && autoMutation.variables?.fiscalYear === doc.fiscalYear ? '...' : 'Automate IRD'}
+                          </button>
+                          <button
+                            className="btn btn--danger btn--sm"
+                            onClick={(e) => { e.stopPropagation(); handleDelete(doc._id, doc.fiscalYear, monthName); }}
+                            disabled={deleteMutation.isPending}
+                            title="Delete this return"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                      {expandedRow === doc._id && (
+                        <tr>
+                          <td colSpan={9} style={{ padding: 0, borderBottom: '2px solid var(--border)' }}>
+                            <D2RowDetail d2Id={doc._id} />
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   );
                 })}
               </tbody>

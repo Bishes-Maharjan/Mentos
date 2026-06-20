@@ -1,4 +1,5 @@
 const express = require("express");
+const ExcelJS = require("exceljs");
 const Receipt = require("../models/Receipt");
 const D2 = require("../models/D2");
 const User = require("../models/User");
@@ -230,6 +231,170 @@ router.post("/cron/calculate", async (req, res) => {
   } catch (error) {
     console.error("[D2 Cron Error]", error);
     res.status(500).json({ error: "Failed to run D2 cron", details: error.message });
+  }
+});
+
+// ============================================================
+// GET /api/d2/:id — Get D2 return detail with ledger info
+// ============================================================
+router.get("/:id", auth, async (req, res) => {
+  try {
+    const d2 = await D2.findOne({ _id: req.params.id, userId: req.user._id });
+    if (!d2) {
+      return res.status(404).json({ error: "D2 return record not found" });
+    }
+
+    // Query all sales and purchases for the given period to build the ledgers
+    const sales = await Receipt.find({
+      userId: req.user._id,
+      fiscalYear: d2.fiscalYear,
+      nepaliMonth: d2.month,
+      type: "sale"
+    }).sort({ date: 1 });
+
+    const purchases = await Receipt.find({
+      userId: req.user._id,
+      fiscalYear: d2.fiscalYear,
+      nepaliMonth: d2.month,
+      type: "purchase"
+    }).sort({ date: 1 });
+
+    res.json({
+      d2,
+      sales,
+      purchases
+    });
+  } catch (error) {
+    console.error("[D2 Detail Error]", error);
+    res.status(500).json({ error: "Failed to fetch D2 detail", details: error.message });
+  }
+});
+
+// ============================================================
+// GET /api/d2/:id/export — Export D2 return audit details to Excel
+// ============================================================
+router.get("/:id/export", auth, async (req, res) => {
+  try {
+    const d2 = await D2.findOne({ _id: req.params.id, userId: req.user._id });
+    if (!d2) {
+      return res.status(404).json({ error: "D2 return record not found" });
+    }
+
+    const receipts = await Receipt.find({
+      userId: req.user._id,
+      fiscalYear: d2.fiscalYear,
+      nepaliMonth: d2.month
+    }).sort({ date: 1 });
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = "Kaji.ai";
+    workbook.created = new Date();
+
+    const sheet = workbook.addWorksheet("Audit Details");
+
+    sheet.columns = [
+      { header: "SNo / क्र.सं.", key: "sn", width: 10 },
+      { header: "PAN / प्यान", key: "pan", width: 15 },
+      { header: "TradeName / व्यापारको नाम", key: "tradeName", width: 30 },
+      { header: "TradeNameType / प्रकार", key: "tradeNameType", width: 25 },
+      { header: "SORP", key: "sorp", width: 15 },
+      { header: "TaxableAmount / करयोग्य रकम", key: "taxableAmount", width: 25 },
+      { header: "ExemptedAmount / छुट रकम", key: "exemptedAmount", width: 25 },
+      { header: "Remarks / कैफियत", key: "remarks", width: 20 }
+    ];
+
+    // Style header row
+    const headerRow = sheet.getRow(1);
+    headerRow.font = { bold: true, size: 10 };
+    headerRow.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+    headerRow.height = 30;
+    headerRow.eachCell((cell) => {
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFD9E1F2" },
+      };
+      cell.border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+    });
+
+    let totalTaxable = 0;
+    let totalExempt = 0;
+
+    receipts.forEach((r, index) => {
+      const taxableAmount = r.items
+        .filter((i) => i.vatApplicable)
+        .reduce((sum, i) => sum + i.amount, 0);
+
+      const exemptAmount = r.items
+        .filter((i) => !i.vatApplicable)
+        .reduce((sum, i) => sum + i.amount, 0);
+
+      totalTaxable += taxableAmount;
+      totalExempt += exemptAmount;
+
+      const dataRow = sheet.addRow({
+        sn: index + 1,
+        pan: r.partyPAN || "N/A",
+        tradeName: r.partyName || "N/A",
+        tradeNameType: "English",
+        sorp: r.type === "sale" ? "Sales" : "Purchase",
+        taxableAmount: taxableAmount,
+        exemptedAmount: exemptAmount,
+        remarks: ""
+      });
+
+      dataRow.eachCell((cell) => {
+        cell.border = {
+          top: { style: "thin" },
+          left: { style: "thin" },
+          bottom: { style: "thin" },
+          right: { style: "thin" },
+        };
+      });
+    });
+
+    // Add totals row
+    const totalRow = sheet.addRow({
+      sn: "",
+      pan: "",
+      tradeName: "TOTAL",
+      tradeNameType: "",
+      sorp: "",
+      taxableAmount: totalTaxable,
+      exemptedAmount: totalExempt,
+      remarks: ""
+    });
+    totalRow.font = { bold: true };
+    totalRow.eachCell((cell) => {
+      cell.border = {
+        top: { style: "double" },
+        left: { style: "thin" },
+        bottom: { style: "double" },
+        right: { style: "thin" },
+      };
+    });
+
+    // Format number columns
+    ["taxableAmount", "exemptedAmount"].forEach((key) => {
+      const col = sheet.getColumn(key);
+      col.numFmt = "#,##0.00";
+    });
+
+    const filename = `D2_Audit_${d2.fiscalYear}_M${d2.month}.xlsx`.replace(/[/]/g, "-");
+
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error("[D2 Export Error]", error);
+    res.status(500).json({ error: "Failed to export Excel", details: error.message });
   }
 });
 

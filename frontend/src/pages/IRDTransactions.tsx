@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import * as XLSX from 'xlsx';
 
 type Txn = {
   pan: string;
@@ -35,6 +36,68 @@ export default function IRDTransactions() {
   const [rows, setRows] = useState<Txn[]>([{ ...empty }]);
   const [noTxn, setNoTxn] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [selectedFileName, setSelectedFileName] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setSelectedFileName(file.name);
+  };
+
+  const handleLoadClick = () => {
+    const file = fileInputRef.current?.files?.[0];
+    if (!file) return alert('Please select a file first.');
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const data = new Uint8Array(e.target?.result as ArrayBuffer);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+      
+      // Skip the header row (index 0)
+      const parsedRows: Txn[] = [];
+      for (let i = 1; i < jsonData.length; i++) {
+        const row: any = jsonData[i];
+        if (!row || row.length === 0) continue;
+        
+        // Columns:
+        // 0: SNo
+        // 1: PAN
+        // 2: TradeName
+        // 3: TradeNameType
+        // 4: SORP
+        // 5: TaxableAmount
+        // 6: ExemptedAmount
+        // 7: Remarks
+        
+        const tradeName = row[2] || '';
+        if (tradeName === 'TOTAL') continue; // Skip totals row
+        
+        // We only add valid rows
+        if (tradeName) {
+          parsedRows.push({
+            pan: row[1] ? String(row[1]) : '',
+            tradeName: String(tradeName),
+            tradeNameType: row[3] ? String(row[3]) : 'Company',
+            sorp: row[4] && String(row[4]).toLowerCase().includes('purchase') ? 'P' : 'S',
+            taxableAmount: row[5] ? String(row[5]) : '',
+            exemptedAmount: row[6] ? String(row[6]) : '',
+            remarks: row[7] ? String(row[7]) : ''
+          });
+        }
+      }
+      
+      if (parsedRows.length > 0) {
+        setRows(parsedRows);
+      } else {
+        alert('No valid data found in the Excel sheet.');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
 
   const update = (i: number, k: keyof Txn, v: string) =>
     setRows((p) => p.map((r, idx) => (idx === i ? { ...r, [k]: v } : r)));
@@ -156,9 +219,33 @@ export default function IRDTransactions() {
                 <input type="checkbox" />
                 Load Records From Excel / एक्सेलबाट रेकर्ड लोड गर्नुहोस्
               </label>
-              <input type="text" readOnly />
-              <button className="ird-txn-excel-btn">Browse</button>
-              <button className="ird-txn-excel-btn">Load</button>
+              <input 
+                type="text" 
+                readOnly 
+                value={selectedFileName} 
+                placeholder="No file chosen" 
+              />
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                style={{ display: 'none' }} 
+                accept=".xlsx,.xls"
+                onChange={handleFileChange}
+                className="ird-excel-input"
+              />
+              <button 
+                className="ird-txn-excel-btn"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                Browse
+              </button>
+              <button 
+                className="ird-txn-excel-btn"
+                onClick={handleLoadClick}
+                id="ird-load-btn"
+              >
+                Load
+              </button>
               <button className="ird-txn-excel-btn ird-txn-excel-btn--download">
                 Download Sample Excel File Here
               </button>

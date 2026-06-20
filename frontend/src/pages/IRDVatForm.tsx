@@ -85,12 +85,12 @@ export default function IRDVatForm() {
   const num = (k: string) => Number(vals[k] || 0);
 
   const totalCredit = useMemo(
-    () => num("2.1_c") + num("2.2_c") + num("3.1_c"),
+    () => num("२.१_c") + num("२.२_c") + num("3.1_c"),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [vals],
   );
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const totalDebit = useMemo(() => num("1.1_d") + num("3.1_d"), [vals]);
+  const totalDebit = useMemo(() => num("१.१_d") + num("3.1_d"), [vals]);
   const debitMinusCredit = totalDebit - totalCredit;
   const prevCredit = num("6");
   const payable = debitMinusCredit - prevCredit;
