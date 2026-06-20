@@ -2,45 +2,101 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const fs = require("fs");
 const path = require("path");
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// Support multiple API keys (comma-separated in GEMINI_API_KEYS) or single GEMINI_API_KEY
+const getApiKeys = () => {
+  const keysEnv = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || "";
+  return keysEnv.split(",").map(k => k.trim()).filter(k => k.length > 0);
+};
+
+let currentKeyIndex = 0;
+
+/**
+ * Wrapper to execute a Gemini call. If a quota/rate-limit error occurs,
+ * it catches the error, swaps to the next API key, and continues trying
+ * until it exhausts all available keys.
+ */
+async function withKeyRotation(actionFn) {
+  const keys = getApiKeys();
+  if (keys.length === 0) {
+    throw new Error("No Gemini API keys configured in environment.");
+  }
+
+  let lastError;
+
+  for (let attempt = 0; attempt < keys.length; attempt++) {
+    try {
+      const activeKey = keys[currentKeyIndex];
+      const genAI = new GoogleGenerativeAI(activeKey);
+      
+      // Attempt the call with the current key
+      return await actionFn(genAI);
+      
+    } catch (error) {
+      lastError = error;
+      const keySnippet = keys[currentKeyIndex].slice(-4);
+      console.error(`[Gemini] Error with key ending in ...${keySnippet}: ${error.message}`);
+      
+      // Check if it's a rate limit or quota error
+      const isRateLimit = error.status === 429 
+        || error.message.includes("429") 
+        || error.message.includes("quota")
+        || error.message.includes("exhausted")
+        || error.message.includes("limit");
+
+      if (isRateLimit) {
+        console.log(`[Gemini] Hit rate limit/quota. Swapping to next API key...`);
+        // Rotate to the next key and 'continue' the loop
+        currentKeyIndex = (currentKeyIndex + 1) % keys.length;
+        continue;
+      }
+      
+      // If it's not a rate limit error (e.g. bad prompt, validation error), throw immediately
+      throw error;
+    }
+  }
+
+  throw new Error(`All ${keys.length} Gemini API keys failed (Rate Limit). Last error: ${lastError.message}`);
+}
 
 /**
  * Step 1: Raw OCR — extract all visible text from the receipt image.
  * Uses Gemini 2.5 Flash with vision.
  */
 async function extractRawText(imagePath) {
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+  return await withKeyRotation(async (genAI) => {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-  const imageBuffer = fs.readFileSync(imagePath);
-  const base64Image = imageBuffer.toString("base64");
+    const imageBuffer = fs.readFileSync(imagePath);
+    const base64Image = imageBuffer.toString("base64");
 
-  const ext = path.extname(imagePath).toLowerCase();
-  const mimeMap = {
-    ".jpg": "image/jpeg",
-    ".jpeg": "image/jpeg",
-    ".png": "image/png",
-    ".webp": "image/webp",
-  };
-  const mimeType = mimeMap[ext] || "image/jpeg";
+    const ext = path.extname(imagePath).toLowerCase();
+    const mimeMap = {
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".png": "image/png",
+      ".webp": "image/webp",
+    };
+    const mimeType = mimeMap[ext] || "image/jpeg";
 
-  const prompt = `You are an OCR system. Extract ALL visible text from this receipt/invoice image exactly as it appears.
+    const prompt = `You are an OCR system. Extract ALL visible text from this receipt/invoice image exactly as it appears.
 Include every line of text you can see — headers, item descriptions, quantities, prices, totals, dates, PAN numbers, invoice numbers, tax breakdowns, etc.
 Preserve the original layout structure as much as possible using line breaks.
 Do NOT interpret, summarize, or restructure the text. Just transcribe everything you see.
 If any text is in Devanagari (Nepali), transliterate it to English alongside the original.`;
 
-  const result = await model.generateContent([
-    prompt,
-    {
-      inlineData: {
-        data: base64Image,
-        mimeType,
+    const result = await model.generateContent([
+      prompt,
+      {
+        inlineData: {
+          data: base64Image,
+          mimeType,
+        },
       },
-    },
-  ]);
+    ]);
 
-  const response = await result.response;
-  return response.text();
+    const response = await result.response;
+    return response.text();
+  });
 }
 
 /**
@@ -48,24 +104,25 @@ If any text is in Devanagari (Nepali), transliterate it to English alongside the
  * Text-only call — no image needed.
  */
 async function structureReceiptData(rawText) {
-  const model = genAI.getGenerativeModel({
-    model: "gemini-2.5-flash",
-    generationConfig: {
-      responseMimeType: "application/json",
-    },
-  });
+  return await withKeyRotation(async (genAI) => {
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+      generationConfig: {
+        responseMimeType: "application/json",
+      },
+    });
 
-  // Read rules for invoice compliance
-  let rulesData = "{}";
-  let rulesData2 = "{}";
-  try {
-    rulesData = fs.readFileSync(path.join(__dirname, "../data/rules.json"), "utf8");
-    rulesData2 = fs.readFileSync(path.join(__dirname, "../data/rules2.json"), "utf8");
-  } catch (err) {
-    console.error("[Gemini] Could not read rules.json", err);
-  }
+    // Read rules for invoice compliance
+    let rulesData = "{}";
+    let rulesData2 = "{}";
+    try {
+      rulesData = fs.readFileSync(path.join(__dirname, "../data/rules.json"), "utf8");
+      rulesData2 = fs.readFileSync(path.join(__dirname, "../data/rules2.json"), "utf8");
+    } catch (err) {
+      console.error("[Gemini] Could not read rules.json", err);
+    }
 
-  const prompt = `You are a Nepali tax document parser and auditor. Analyze the following OCR text from a Nepali business receipt or invoice and extract structured data.
+    const prompt = `You are a Nepali tax document parser and auditor. Analyze the following OCR text from a Nepali business receipt or invoice and extract structured data.
 Additionally, you MUST audit the invoice against the provided "Nepal Tax Invoice Audit Rules" and list any violations in the "notes" array.
 
 Context:
@@ -124,20 +181,21 @@ ${rawText}
 
 Return ONLY the JSON object, no markdown formatting.`;
 
-  const result = await model.generateContent(prompt);
-  const response = await result.response;
-  const text = response.text();
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
 
-  try {
-    return JSON.parse(text);
-  } catch (parseError) {
-    // Try to extract JSON from potential markdown code blocks
-    const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[1].trim());
+    try {
+      return JSON.parse(text);
+    } catch (parseError) {
+      // Try to extract JSON from potential markdown code blocks
+      const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[1].trim());
+      }
+      throw new Error(`Failed to parse Gemini response as JSON: ${text.substring(0, 200)}`);
     }
-    throw new Error(`Failed to parse Gemini response as JSON: ${text.substring(0, 200)}`);
-  }
+  });
 }
 
 /**
