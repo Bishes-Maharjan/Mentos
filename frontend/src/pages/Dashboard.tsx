@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Upload, FileText, Receipt as ReceiptIcon, ShoppingCart, TrendingUp, BarChart3 } from 'lucide-react';
 import { getReceipts, getVATSummary, formatNPR } from '../api/client';
-import type { Receipt, VATSummary } from '../types';
 import VATSummaryCard from '../components/VATSummaryCard';
 import MonthlyBreakdown from '../components/MonthlyBreakdown';
 import ReceiptCard from '../components/ReceiptCard';

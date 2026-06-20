@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getAnnexPurchases, downloadAnnexExcel } from '../api/client';
-import type { AnnexRow, AnnexTotals } from '../types';
 import AnnexTable from '../components/AnnexTable';
 import MonthYearPicker from '../components/MonthYearPicker';
 

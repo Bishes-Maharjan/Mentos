@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getAnnexSales, downloadAnnexExcel } from '../api/client';
-import type { AnnexRow, AnnexTotals } from '../types';
 import AnnexTable from '../components/AnnexTable';
 import MonthYearPicker from '../components/MonthYearPicker';
 
@@ -19,6 +18,7 @@ export default function AnnexSales() {
     taxableAmount: 0,
     vatAmount: 0,
     exemptAmount: 0,
+    exportAmount: 0
   };
   const period = data?.period || '';
 
