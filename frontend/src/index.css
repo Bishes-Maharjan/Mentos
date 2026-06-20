@@ -1597,6 +1597,87 @@ input::placeholder, textarea::placeholder {
 }
 
 /* ============================================================
+   Monthly Breakdown
+   ============================================================ */
+.monthly-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.monthly-breakdown__row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.monthly-breakdown__label {
+  width: 40px;
+  font-weight: 500;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.monthly-breakdown__bars {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.monthly-breakdown__bar {
+  height: 8px;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.monthly-breakdown__bar--sales {
+  background: var(--success);
+}
+
+.monthly-breakdown__bar--purchases {
+  background: var(--danger);
+}
+
+.monthly-breakdown__values {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: var(--font-size-xs);
+  min-width: 80px;
+}
+
+.monthly-breakdown__legend {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  justify-content: center;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.bg-success {
+  background: var(--success);
+}
+
+.bg-danger {
+  background: var(--danger);
+}
+
+/* ============================================================
    Responsive
    ============================================================ */
 @media (max-width: 1024px) {

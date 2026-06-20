@@ -5,6 +5,7 @@ import { Upload, FileText, Receipt as ReceiptIcon, ShoppingCart, TrendingUp, Bar
 import { getReceipts, getVATSummary, formatNPR } from '../api/client';
 import type { Receipt, VATSummary } from '../types';
 import VATSummaryCard from '../components/VATSummaryCard';
+import MonthlyBreakdown from '../components/MonthlyBreakdown';
 import ReceiptCard from '../components/ReceiptCard';
 import MonthYearPicker from '../components/MonthYearPicker';
 import EmptyState from '../components/EmptyState';
@@ -75,9 +76,10 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* VAT Summary */}
-      <div className="dashboard__section">
+      {/* VAT Summary & Breakdown */}
+      <div className="dashboard__section" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--space-6)' }}>
         <VATSummaryCard summary={vatSummary} loading={loading} />
+        <MonthlyBreakdown year={year} />
       </div>
 
       {/* Stats */}
