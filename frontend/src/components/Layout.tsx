@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Upload, FileText, ShoppingCart, LogOut, Building2 } from 'lucide-react';
+import { LayoutDashboard, Upload, FileText, ShoppingCart, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const navItems = [
@@ -46,9 +46,9 @@ export default function Layout() {
               PAN: {user?.pan}
             </div>
           </div>
-          <button 
-            onClick={logout} 
-            className="btn btn--secondary btn--sm" 
+          <button
+            onClick={logout}
+            className="btn btn--secondary btn--sm"
             style={{ width: '100%', justifyContent: 'center' }}
           >
             <LogOut className="sidebar__icon" style={{ width: 16, height: 16 }} />
