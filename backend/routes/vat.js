@@ -1,5 +1,6 @@
 const express = require("express");
 const Receipt = require("../models/Receipt");
+const { auth } = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -7,17 +8,14 @@ const router = express.Router();
 // GET /api/vat/summary — VAT Liability Summary
 // Output VAT (sales) − Input VAT (purchases) = Net Payable
 // ============================================================
-router.get("/summary", async (req, res) => {
+router.get("/summary", auth, async (req, res) => {
   try {
     const { month, year } = req.query;
 
-    const dateFilter = {};
+    const dateFilter = { userId: req.user._id };
     if (month && year) {
-      const m = parseInt(month);
-      const y = parseInt(year);
-      const startDate = new Date(y, m - 1, 1);
-      const endDate = new Date(y, m, 0, 23, 59, 59, 999);
-      dateFilter.date = { $gte: startDate, $lte: endDate };
+      const prefix = `${year}-${String(month).padStart(2, "0")}`;
+      dateFilter.dateBS = { $regex: `^${prefix}` };
     }
 
     // Aggregate sales (output VAT)
@@ -101,16 +99,20 @@ router.get("/summary", async (req, res) => {
 // ============================================================
 // GET /api/vat/monthly-breakdown — Monthly breakdown for charts
 // ============================================================
-router.get("/monthly-breakdown", async (req, res) => {
+router.get("/monthly-breakdown", auth, async (req, res) => {
   try {
     const { year } = req.query;
-    const y = parseInt(year) || new Date().getFullYear();
+    const y = parseInt(year) || 2081;
+
+    const bsMonthNames = [
+      "Baishakh", "Jestha", "Ashadh", "Shrawan", "Bhadra", "Ashwin",
+      "Kartik", "Mangsir", "Poush", "Magh", "Falgun", "Chaitra"
+    ];
 
     const months = [];
     for (let m = 1; m <= 12; m++) {
-      const startDate = new Date(y, m - 1, 1);
-      const endDate = new Date(y, m, 0, 23, 59, 59, 999);
-      const dateFilter = { date: { $gte: startDate, $lte: endDate } };
+      const prefix = `${y}-${String(m).padStart(2, "0")}`;
+      const dateFilter = { dateBS: { $regex: `^${prefix}` }, userId: req.user._id };
 
       const [salesAgg] = await Receipt.aggregate([
         { $match: { type: "sale", ...dateFilter } },
@@ -141,7 +143,7 @@ router.get("/monthly-breakdown", async (req, res) => {
 
       months.push({
         month: m,
-        monthName: new Date(y, m - 1).toLocaleString("en", { month: "short" }),
+        monthName: bsMonthNames[m - 1],
         outputVAT,
         inputVAT,
         netVAT: outputVAT - inputVAT,

@@ -15,13 +15,21 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // ---- Routes ----
+const { auth } = require("./middleware/auth");
 const receiptRoutes = require("./routes/receipts");
 const annexRoutes = require("./routes/annex");
 const vatRoutes = require("./routes/vat");
+const d2Routes = require("./routes/d2");
+const userRoutes = require("./routes/users");
 
-app.use("/api/receipts", receiptRoutes);
-app.use("/api/annex", annexRoutes);
-app.use("/api/vat", vatRoutes);
+// Public routes (no auth needed)
+app.use("/api/users", userRoutes);
+
+// Protected routes (JWT required)
+app.use("/api/receipts", auth, receiptRoutes);
+app.use("/api/annex", auth, annexRoutes);
+app.use("/api/vat", auth, vatRoutes);
+app.use("/api/d2", d2Routes);
 
 // ---- Health check ----
 app.get("/api/health", (req, res) => {

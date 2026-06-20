@@ -55,21 +55,40 @@ async function structureReceiptData(rawText) {
     },
   });
 
-  const prompt = `You are a Nepali tax document parser. Analyze the following OCR text from a Nepali business receipt or invoice and extract structured data.
+  // Read rules for invoice compliance
+  let rulesData = "{}";
+  let rulesData2 = "{}";
+  try {
+    rulesData = fs.readFileSync(path.join(__dirname, "../data/rules.json"), "utf8");
+    rulesData2 = fs.readFileSync(path.join(__dirname, "../data/rules2.json"), "utf8");
+  } catch (err) {
+    console.error("[Gemini] Could not read rules.json", err);
+  }
+
+  const prompt = `You are a Nepali tax document parser and auditor. Analyze the following OCR text from a Nepali business receipt or invoice and extract structured data.
+Additionally, you MUST audit the invoice against the provided "Nepal Tax Invoice Audit Rules" and list any violations in the "notes" array.
 
 Context:
 - Nepal uses 13% VAT on taxable goods/services
 - PAN (Permanent Account Number) is a 9-digit number
-- Dates may be in BS (Bikram Sambat) Nepali calendar or AD (Gregorian) — convert to ISO format (YYYY-MM-DD) if possible. If the date is in BS format, try to convert it to AD. If you cannot convert, keep the BS date as a string.
+- Dates may be in BS (Bikram Sambat) Nepali calendar or AD (Gregorian).
+- For "date", convert the date to AD Gregorian YYYY-MM-DD format if possible.
+- For "date_bs", extract the Nepali Bikram Sambat date (e.g. 2080-03-15 or 2081/01/12) exactly as it appears or as a normalized YYYY-MM-DD string.
 - Amounts are in NPR (Nepali Rupees)
 - "Bill No" or "Invoice No" or "बिल नं" refers to the invoice number
 
+Audit Rules Context1 (JSON):
+${rulesData}
+Audit Rules Context2 (JSON):
+${rulesData2}
+
 Extract and return valid JSON matching this exact schema:
 {
-  "vendor_name": "string — the business/shop name",
-  "vendor_pan": "string (exactly 9 digits) or null if not found/not valid",
+  "party_name": "string — the counterparty business/shop name (the seller for purchase receipts, the buyer for sales invoices)",
+  "party_pan": "string (exactly 9 digits) or null if not found/not valid",
   "invoice_number": "string or null",
-  "date": "string in YYYY-MM-DD format or null if unparseable",
+  "date": "string in YYYY-MM-DD format (AD) or null if unparseable",
+  "date_bs": "string in YYYY-MM-DD format (BS) or null if not found",
   "items": [
     {
       "description": "string — item name/description",
@@ -82,16 +101,20 @@ Extract and return valid JSON matching this exact schema:
   "subtotal": "number — amount before VAT, or null",
   "vat_amount": "number — the VAT/tax amount, or 0 if no VAT found",
   "total": "number — final total amount",
-  "confidence": "high | medium | low"
+  "transaction_type": "domestic | export | exempt | import",
+  "confidence": "high | medium | low",
+  "notes": ["string — list of compliance violations found based on the provided Audit Rules. If the invoice violates a rule (e.g., missing 'Tax Invoice' text, missing exactly 9-digit PAN, etc.), explain what is wrong here."]
 }
 
 Rules:
 - If you cannot confidently extract a field, set it to null
 - If the receipt has no clear item breakdown, create a single item with the total amount
 - Set confidence to "high" if most fields are clearly readable, "medium" if some fields required interpretation, "low" if major fields are missing or unclear
-- vendor_pan must be exactly 9 digits if present, otherwise null
+- party_pan must be exactly 9 digits if present, otherwise null
 - Compute subtotal as (total - vat_amount) if not explicitly stated
 - If no VAT is mentioned, set vat_amount to 0 and all items to vat_applicable: false
+- Determine transaction_type: default is "domestic". Set to "exempt" if no VAT is applicable, "import" if from outside Nepal, or "export" if sent outside Nepal.
+- In "notes", carefully evaluate the raw OCR text against the Audit Rules. Include clear, concise explanations of any rule violations found. If no violations exist, return an empty array.
 
 OCR Text:
 ---

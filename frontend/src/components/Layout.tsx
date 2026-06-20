@@ -1,14 +1,18 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { LayoutDashboard, Upload, FileText, ShoppingCart } from 'lucide-react';
+import { LayoutDashboard, Upload, FileText, ShoppingCart, LogOut } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/upload', icon: Upload, label: 'Upload Receipt' },
   { to: '/annex/sales', icon: FileText, label: 'Sales Register' },
   { to: '/annex/purchases', icon: ShoppingCart, label: 'Purchase Register' },
+  { to: '/tax-return', icon: FileText, label: 'Tax Return (D2)' },
 ];
 
 export default function Layout() {
+  const { user, logout } = useAuth();
+
   return (
     <div className="layout">
       <aside className="sidebar">
@@ -33,8 +37,23 @@ export default function Layout() {
           ))}
         </nav>
 
-        <div className="sidebar__footer">
-          Kaji.ai v1.0 — MVP
+        <div className="sidebar__footer" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          <div>
+            <div style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: 'var(--font-size-sm)' }}>
+              {user?.businessName}
+            </div>
+            <div style={{ fontSize: 'var(--font-size-xs)', color: 'var(--text-tertiary)' }}>
+              PAN: {user?.pan}
+            </div>
+          </div>
+          <button 
+            onClick={logout} 
+            className="btn btn--secondary btn--sm" 
+            style={{ width: '100%', justifyContent: 'center' }}
+          >
+            <LogOut className="sidebar__icon" style={{ width: 16, height: 16 }} />
+            Log Out
+          </button>
         </div>
       </aside>
 

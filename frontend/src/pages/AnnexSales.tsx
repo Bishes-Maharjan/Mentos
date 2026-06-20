@@ -1,40 +1,26 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { getAnnexSales, downloadAnnexExcel } from '../api/client';
 import type { AnnexRow, AnnexTotals } from '../types';
 import AnnexTable from '../components/AnnexTable';
 import MonthYearPicker from '../components/MonthYearPicker';
 
 export default function AnnexSales() {
-  const now = new Date();
-  const [month, setMonth] = useState(now.getMonth() + 1);
-  const [year, setYear] = useState(now.getFullYear());
-  const [rows, setRows] = useState<AnnexRow[]>([]);
-  const [totals, setTotals] = useState<AnnexTotals>({
+  const [month, setMonth] = useState<number | ''>('');
+  const [year, setYear] = useState<number | ''>('');
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ['annexSales', month, year],
+    queryFn: () => getAnnexSales({ month, year }),
+  });
+
+  const rows = data?.rows || [];
+  const totals = data?.totals || {
     totalSalesAmount: 0,
     taxableAmount: 0,
     vatAmount: 0,
     exemptAmount: 0,
-  });
-  const [period, setPeriod] = useState('');
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await getAnnexSales({ month, year });
-      setRows(data.rows);
-      setTotals(data.totals);
-      setPeriod(data.period);
-    } catch (err) {
-      console.error('Annex sales fetch error:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [month, year]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  };
+  const period = data?.period || '';
 
   const handleExport = useCallback(() => {
     downloadAnnexExcel('sales', { month, year });

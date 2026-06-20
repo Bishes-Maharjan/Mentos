@@ -8,16 +8,21 @@ export interface ReceiptItem {
 
 export interface Receipt {
   _id: string;
-  vendorName: string;
-  vendorPAN: string | null;
+  partyName: string;
+  partyPAN: string | null;
   invoiceNumber: string | null;
   date: string | null;
+  dateBS: string;
+  transactionType: 'domestic' | 'export' | 'exempt' | 'import';
+  fiscalYear: string;
+  nepaliMonth: number | null;
   items: ReceiptItem[];
   subtotal: number;
   vatAmount: number;
   total: number;
   type: 'sale' | 'purchase';
   confidence: 'high' | 'medium' | 'low';
+  notes: string[];
   imagePath: string;
   rawText: string;
   taxableAmount: number;
