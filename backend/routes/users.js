@@ -52,6 +52,10 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ error: "businessName and pan are required" });
     }
 
+    if (!address) {
+      return res.status(400).json({ error: "Address is required" });
+    }
+
     if (!/^\d{9}$/.test(pan)) {
       return res.status(400).json({ error: "PAN must be exactly 9 digits" });
     }
@@ -61,6 +65,14 @@ router.post("/register", async (req, res) => {
 
     if (!phone && !email) {
       return res.status(400).json({ error: "At least one of phone or email is required" });
+    }
+
+    if (phone && !/^\d{10}$/.test(phone)) {
+      return res.status(400).json({ error: "Phone number must be exactly 10 digits" });
+    }
+
+    if (email && !/^\S+@\S+\.\S+$/.test(email)) {
+      return res.status(400).json({ error: "Invalid email address format" });
     }
 
     // Check if PAN already registered
@@ -84,16 +96,17 @@ router.post("/register", async (req, res) => {
       businessName,
       ownerName: ownerName || "",
       pan,
-      address: address || "",
+      address,
       municipality: municipality || "",
       district: district || "",
       province: province || null,
-      phone: phone || "",
-      email: email || "",
       vatRegistered: vatRegistered !== false,
       isNewBusiness: newBusiness,
       fiscalYearStart: fiscalYearStart || "",
     });
+
+    if (phone) user.phone = phone;
+    if (email) user.email = email;
 
     await user.save();
 

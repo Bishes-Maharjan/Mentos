@@ -20,6 +20,7 @@ const receiptSchema = new mongoose.Schema(
       type: String,
       match: [/^\d{9}$/, "PAN must be 9 digits"],
       default: null,
+      unique: true
     },
     invoiceNumber: { type: String, default: null },
     date: { type: Date, default: null },

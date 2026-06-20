@@ -10,12 +10,26 @@ const userSchema = new mongoose.Schema(
       unique: true,
       match: [/^\d{9}$/, "PAN must be 9 digits"],
     },
-    address: { type: String, default: "" },
+    address: {
+      type: String,
+      required: [true, "Address is required"],
+      minlength: [3, "Address must be at least 3 characters long"]
+    },
     municipality: { type: String, default: "" },
     district: { type: String, default: "" },
     province: { type: Number, default: null }, // 1-7
-    phone: { type: String, default: "", unique: true },
-    email: { type: String, default: "", unique: true },
+    phone: {
+      type: String,
+      match: [/^\d{10}$/, "Phone number must be 10 digits"],
+      unique: true,
+      sparse: true
+    },
+    email: {
+      type: String,
+      match: [/^\S+@\S+\.\S+$/, "Please provide a valid email address"],
+      unique: true,
+      sparse: true
+    },
     vatRegistered: { type: Boolean, default: true },
     isNewBusiness: { type: Boolean, default: true },
     fiscalYearStart: { type: String, default: "" }, // e.g. "2081"
