@@ -155,6 +155,7 @@ router.get("/export/:type", auth, async (req, res) => {
       { header: "Taxable Amount\n(कर योग्य रकम)", key: "taxableAmount", width: 18 },
       { header: "VAT Amount\n(मूअकर रकम)", key: "vatAmount", width: 15 },
       { header: "Exempt Amount\n(कर छुट रकम)", key: "exemptAmount", width: 15 },
+      { header: "Export Amount\n(निर्यात रकम)", key: "exportAmount", width: 15 }
     ];
 
     // Style header row
@@ -188,6 +189,7 @@ router.get("/export/:type", auth, async (req, res) => {
         taxableAmount: row.taxableAmount,
         vatAmount: row.vatAmount,
         exemptAmount: row.exemptAmount,
+        exportAmount: row.exportAmount
       });
       dataRow.eachCell((cell) => {
         cell.border = {
@@ -206,8 +208,9 @@ router.get("/export/:type", auth, async (req, res) => {
         taxableAmount: acc.taxableAmount + row.taxableAmount,
         vatAmount: acc.vatAmount + row.vatAmount,
         exemptAmount: acc.exemptAmount + row.exemptAmount,
+        exportAmount: acc.exportAmount + row.exportAmount,
       }),
-      { totalSalesAmount: 0, taxableAmount: 0, vatAmount: 0, exemptAmount: 0 }
+      { totalSalesAmount: 0, taxableAmount: 0, vatAmount: 0, exemptAmount: 0, exportAmount: 0 }
     );
 
     const totalRow = sheet.addRow({
@@ -220,6 +223,7 @@ router.get("/export/:type", auth, async (req, res) => {
       taxableAmount: totals.taxableAmount,
       vatAmount: totals.vatAmount,
       exemptAmount: totals.exemptAmount,
+      exportAmount: totals.exportAmount,
     });
     totalRow.font = { bold: true };
     totalRow.eachCell((cell) => {
@@ -232,7 +236,7 @@ router.get("/export/:type", auth, async (req, res) => {
     });
 
     // Format number columns
-    ["totalSalesAmount", "taxableAmount", "vatAmount", "exemptAmount"].forEach((key) => {
+    ["totalSalesAmount", "taxableAmount", "vatAmount", "exemptAmount", "exportAmount"].forEach((key) => {
       const col = sheet.getColumn(key);
       col.numFmt = "#,##0.00";
     });
