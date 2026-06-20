@@ -1,6 +1,7 @@
 const express = require("express");
 const ExcelJS = require("exceljs");
 const Receipt = require("../models/Receipt");
+const { auth } = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -9,11 +10,8 @@ const router = express.Router();
  */
 function buildDateFilter(month, year) {
   if (!month || !year) return {};
-  const m = parseInt(month);
-  const y = parseInt(year);
-  const startDate = new Date(y, m - 1, 1);
-  const endDate = new Date(y, m, 0, 23, 59, 59, 999);
-  return { date: { $gte: startDate, $lte: endDate } };
+  const prefix = `${year}-${String(month).padStart(2, "0")}`;
+  return { dateBS: { $regex: `^${prefix}` } };
 }
 
 /**
@@ -33,10 +31,10 @@ function formatAnnexRows(receipts) {
 
     return {
       sn: index + 1,
-      buyerSellerName: r.vendorName || "N/A",
-      pan: r.vendorPAN || "N/A",
+      buyerSellerName: r.partyName || "N/A",
+      pan: r.partyPAN || "N/A",
       invoiceNumber: r.invoiceNumber || "N/A",
-      date: r.date ? r.date.toISOString().split("T")[0] : "N/A",
+      date: r.dateBS || "N/A",
       totalSalesAmount: r.total || 0,
       taxableAmount,
       vatAmount: r.vatAmount || 0,
@@ -50,11 +48,11 @@ function formatAnnexRows(receipts) {
 // ============================================================
 // GET /api/annex/sales — Annex 10 (Sales Register)
 // ============================================================
-router.get("/sales", async (req, res) => {
+router.get("/sales", auth, async (req, res) => {
   try {
     const { month, year } = req.query;
     const dateFilter = buildDateFilter(month, year);
-    const receipts = await Receipt.find({ type: "sale", ...dateFilter }).sort({ date: 1 });
+    const receipts = await Receipt.find({ type: "sale", userId: req.user._id, ...dateFilter }).sort({ date: 1 });
     const rows = formatAnnexRows(receipts);
 
     // Compute totals
@@ -85,11 +83,11 @@ router.get("/sales", async (req, res) => {
 // ============================================================
 // GET /api/annex/purchases — Annex 13 (Purchase Register)
 // ============================================================
-router.get("/purchases", async (req, res) => {
+router.get("/purchases", auth, async (req, res) => {
   try {
     const { month, year } = req.query;
     const dateFilter = buildDateFilter(month, year);
-    const receipts = await Receipt.find({ type: "purchase", ...dateFilter }).sort({ date: 1 });
+    const receipts = await Receipt.find({ type: "purchase", userId: req.user._id, ...dateFilter }).sort({ date: 1 });
     const rows = formatAnnexRows(receipts);
 
     const totals = rows.reduce(
@@ -120,7 +118,7 @@ router.get("/purchases", async (req, res) => {
 // GET /api/annex/export/:type — Download Annex as Excel (.xlsx)
 // type = "sales" | "purchases"
 // ============================================================
-router.get("/export/:type", async (req, res) => {
+router.get("/export/:type", auth, async (req, res) => {
   try {
     const { type } = req.params;
     const { month, year } = req.query;
@@ -133,7 +131,7 @@ router.get("/export/:type", async (req, res) => {
     const annexNumber = type === "sales" ? "10" : "13";
     const dateFilter = buildDateFilter(month, year);
 
-    const receipts = await Receipt.find({ type: receiptType, ...dateFilter }).sort({ date: 1 });
+    const receipts = await Receipt.find({ type: receiptType, userId: req.user._id, ...dateFilter }).sort({ date: 1 });
     const rows = formatAnnexRows(receipts);
 
     // Build Excel workbook

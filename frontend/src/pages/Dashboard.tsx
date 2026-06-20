@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Upload, FileText, Receipt as ReceiptIcon, ShoppingCart, TrendingUp, BarChart3 } from 'lucide-react';
 import { getReceipts, getVATSummary, formatNPR } from '../api/client';
@@ -11,35 +12,22 @@ import LoadingSpinner from '../components/LoadingSpinner';
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const now = new Date();
-  const [month, setMonth] = useState(now.getMonth() + 1);
-  const [year, setYear] = useState(now.getFullYear());
+  const [month, setMonth] = useState<number | ''>('');
+  const [year, setYear] = useState<number | ''>('');
 
-  const [vatSummary, setVatSummary] = useState<VATSummary | null>(null);
-  const [recentReceipts, setRecentReceipts] = useState<Receipt[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [totalReceipts, setTotalReceipts] = useState(0);
+  const { data: vatSummary, isLoading: loadingVat } = useQuery({
+    queryKey: ['vatSummary', month, year],
+    queryFn: () => getVATSummary({ month, year }),
+  });
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [summaryRes, receiptsRes] = await Promise.all([
-        getVATSummary({ month, year }),
-        getReceipts({ limit: 10 }),
-      ]);
-      setVatSummary(summaryRes);
-      setRecentReceipts(receiptsRes.receipts);
-      setTotalReceipts(receiptsRes.pagination.total);
-    } catch (err) {
-      console.error('Dashboard fetch error:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [month, year]);
+  const { data: receiptsData, isLoading: loadingReceipts } = useQuery({
+    queryKey: ['receipts', 'recent'],
+    queryFn: () => getReceipts({ limit: 10 }),
+  });
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const loading = loadingVat || loadingReceipts;
+  const recentReceipts = receiptsData?.receipts || [];
+  const totalReceipts = receiptsData?.pagination?.total || 0;
 
   if (loading && !vatSummary) {
     return <LoadingSpinner size="lg" />;

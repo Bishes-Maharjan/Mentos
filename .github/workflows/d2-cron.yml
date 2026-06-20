@@ -1,0 +1,19 @@
+name: D2 Tax Return Cron Job
+
+on:
+  schedule:
+    # Run at 00:00 UTC on the 15th of every month
+    # Nepali month transitions typically happen around the 15th of the Gregorian month
+    - cron: '0 0 25 * *'
+  workflow_dispatch: # Allows manual triggering from GitHub UI
+
+jobs:
+  calculate-d2:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger D2 Calculation Endpoint
+        run: |
+          curl -X POST "${{ secrets.API_BASE_URL }}/api/d2/cron/calculate" \
+            -H "Content-Type: application/json" \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            --fail

@@ -13,10 +13,17 @@ const itemSchema = new mongoose.Schema(
 
 const receiptSchema = new mongoose.Schema(
   {
-    vendorName: { type: String, default: "" },
-    vendorPAN: { type: String, default: null },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    // Counterparty info — vendor for purchases, buyer for sales
+    partyName: { type: String, default: "" },
+    partyPAN: {
+      type: String,
+      match: [/^\d{9}$/, "PAN must be 9 digits"],
+      default: null,
+    },
     invoiceNumber: { type: String, default: null },
     date: { type: Date, default: null },
+    dateBS: { type: String, default: "" }, // Bikram Sambat date string e.g. "2081-02-15"
     items: { type: [itemSchema], default: [] },
     subtotal: { type: Number, default: 0 },
     vatAmount: { type: Number, default: 0 },
@@ -27,6 +34,14 @@ const receiptSchema = new mongoose.Schema(
       required: true,
       default: "purchase",
     },
+    transactionType: {
+      type: String,
+      enum: ["domestic", "export", "exempt", "import"],
+      default: "domestic",
+    },
+    fiscalYear: { type: String, default: "" },    // e.g. "2081/82"
+    nepaliMonth: { type: Number, default: null },  // 1-12 (Baishakh to Chaitra)
+    notes: [{ type: String }],
     confidence: {
       type: String,
       enum: ["high", "medium", "low"],

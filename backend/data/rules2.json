@@ -1,0 +1,186 @@
+{
+    "schema_name": "invoice_tax_extraction",
+    "description": "Fields to extract from an invoice that PASSES audit, for downstream use in tax form filing. This is separate from the rules knowledge base — the rules.json tells the RAG what to check; this schema tells it what to hand off once the invoice is clean.",
+    "fields": {
+        "invoice_number": {
+            "type": "string",
+            "required": true,
+            "notes": "Bijak number, exactly as printed."
+        },
+        "transaction_type": {
+            "type": "enum",
+            "values": [
+                "sale",
+                "purchase"
+            ],
+            "required": true,
+            "notes": "Whether this invoice is one of your sales (output VAT) or one of your purchases (input VAT/TDS)."
+        },
+        "invoice_type": {
+            "type": "enum",
+            "values": [
+                "tax_invoice",
+                "abbreviated_invoice",
+                "credit_note",
+                "debit_note"
+            ],
+            "required": true
+        },
+        "invoice_date_bs": {
+            "type": "string",
+            "required": true,
+            "format": "YYYY-MM-DD (Bikram Sambat)"
+        },
+        "invoice_date_ad": {
+            "type": "string",
+            "required": false,
+            "format": "YYYY-MM-DD (Gregorian)",
+            "notes": "Derived/converted if not printed on the invoice."
+        },
+        "supplier": {
+            "type": "object",
+            "required": true,
+            "fields": {
+                "name": {
+                    "type": "string",
+                    "required": true
+                },
+                "pan_vat_number": {
+                    "type": "string",
+                    "required": true,
+                    "format": "9 digits"
+                },
+                "address": {
+                    "type": "string",
+                    "required": false
+                }
+            }
+        },
+        "customer": {
+            "type": "object",
+            "required": true,
+            "fields": {
+                "name": {
+                    "type": "string",
+                    "required": false
+                },
+                "pan_number": {
+                    "type": "string",
+                    "required": false,
+                    "format": "9 digits",
+                    "notes": "Null/absent if buyer is a walk-in consumer under the PAN threshold (see rule FMT-005)."
+                },
+                "pan_present": {
+                    "type": "boolean",
+                    "required": true,
+                    "notes": "Explicit flag — lets downstream logic distinguish 'no PAN on file' from 'PAN not required for this transaction'."
+                }
+            }
+        },
+        "line_items": {
+            "type": "array",
+            "required": true,
+            "item_fields": {
+                "description": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "number"
+                },
+                "unit_price": {
+                    "type": "number"
+                },
+                "line_total": {
+                    "type": "number"
+                },
+                "tax_category": {
+                    "type": "enum",
+                    "values": [
+                        "taxable",
+                        "exempt",
+                        "zero_rated"
+                    ]
+                }
+            }
+        },
+        "amounts": {
+            "type": "object",
+            "required": true,
+            "fields": {
+                "taxable_amount": {
+                    "type": "number"
+                },
+                "exempt_amount": {
+                    "type": "number"
+                },
+                "zero_rated_amount": {
+                    "type": "number"
+                },
+                "vat_amount": {
+                    "type": "number"
+                },
+                "grand_total": {
+                    "type": "number"
+                }
+            }
+        },
+        "tds": {
+            "type": "object",
+            "required": false,
+            "notes": "Populate only for purchase invoices subject to TDS — see TDS-* rules.",
+            "fields": {
+                "tds_applicable": {
+                    "type": "boolean"
+                },
+                "tds_category": {
+                    "type": "string",
+                    "notes": "Which TDS-* rule applied, e.g. 'TDS-001 service VAT-registered'."
+                },
+                "tds_rate": {
+                    "type": "number"
+                },
+                "tds_amount": {
+                    "type": "number"
+                }
+            }
+        },
+        "payment": {
+            "type": "object",
+            "required": true,
+            "fields": {
+                "method": {
+                    "type": "enum",
+                    "values": [
+                        "cash",
+                        "digital_wallet",
+                        "card",
+                        "bank_transfer",
+                        "credit"
+                    ]
+                },
+                "amount_paid": {
+                    "type": "number"
+                },
+                "payment_date_bs": {
+                    "type": "string",
+                    "required": false
+                },
+                "reference_id": {
+                    "type": "string",
+                    "required": false,
+                    "notes": "Transaction/cheque/reference number if available."
+                }
+            }
+        },
+        "related_document_reference": {
+            "type": "string",
+            "required": false,
+            "notes": "Only for credit/debit notes — the original invoice number being adjusted (see rule FMT-010)."
+        },
+        "source_file": {
+            "type": "string",
+            "required": true,
+            "notes": "Filename/path of the source scan, for audit-trail traceability back to the original document."
+        }
+    }
+}

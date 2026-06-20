@@ -1,59 +1,119 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { ShoppingCart, TrendingUp, CheckCircle, Upload as UploadIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import FileDropzone from '../components/FileDropzone';
 import ReceiptForm from '../components/ReceiptForm';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { uploadReceipt, updateReceipt } from '../api/client';
 import type { Receipt, PANValidation } from '../types';
 
 type UploadState = 'idle' | 'processing' | 'review' | 'success';
 
+type UploadResult = {
+  receipt: Receipt;
+  panValidation: PANValidation | null;
+  previewUrl: string;
+  saved: boolean;
+};
+
 export default function Upload() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [state, setState] = useState<UploadState>('idle');
   const [receiptType, setReceiptType] = useState<'sale' | 'purchase'>('purchase');
-  const [receipt, setReceipt] = useState<Receipt | null>(null);
-  const [panValidation, setPanValidation] = useState<PANValidation | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [results, setResults] = useState<UploadResult[]>([]);
+  const [processingProgress, setProcessingProgress] = useState({ current: 0, total: 0 });
 
-  const handleFileSelect = useCallback(
-    async (file: File) => {
+  const uploadMutation = useMutation({
+    mutationFn: ({ file, type }: { file: File; type: 'sale' | 'purchase' }) =>
+      uploadReceipt(file, type),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<Receipt> }) =>
+      updateReceipt(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['receipts'] });
+      queryClient.invalidateQueries({ queryKey: ['vatSummary'] });
+    },
+  });
+
+  const handleFilesSelect = useCallback(
+    async (files: File[]) => {
       setState('processing');
-      setPreviewUrl(URL.createObjectURL(file));
+      setProcessingProgress({ current: 0, total: files.length });
+      
+      const newResults: UploadResult[] = [];
 
-      try {
-        const result = await uploadReceipt(file, receiptType);
-        setReceipt(result.receipt);
-        setPanValidation(result.panValidation);
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        setProcessingProgress({ current: i + 1, total: files.length });
+        
+        try {
+          const result = await uploadMutation.mutateAsync({ file, type: receiptType });
+          newResults.push({
+            receipt: result.receipt,
+            panValidation: result.panValidation,
+            previewUrl: URL.createObjectURL(file),
+            saved: false
+          });
+        } catch (err: any) {
+          const message = err.response?.data?.error || err.message || 'Failed to process a receipt';
+          toast.error(`Error on file ${file.name}: ${message}`);
+        }
+      }
+
+      if (newResults.length > 0) {
+        setResults(newResults);
         setState('review');
-        toast.success('Receipt extracted successfully!');
-      } catch (err: unknown) {
+        toast.success(`Successfully extracted ${newResults.length} receipt(s)!`);
+      } else {
         setState('idle');
-        const message =
-          err instanceof Error ? err.message : 'Failed to process receipt';
-        toast.error(message);
       }
     },
-    [receiptType]
+    [receiptType, uploadMutation]
   );
 
   const handleSave = useCallback(
-    async (data: Partial<Receipt>) => {
-      if (!receipt) return;
-      const result = await updateReceipt(receipt._id, data);
-      setReceipt(result.receipt);
-      setPanValidation(result.panValidation);
-      setState('success');
+    async (index: number, data: Partial<Receipt>) => {
+      const resultData = results[index];
+      if (!resultData) return;
+
+      try {
+        const updated = await updateMutation.mutateAsync({ id: resultData.receipt._id, data });
+        
+        setResults(prev => {
+          const newArr = [...prev];
+          newArr[index] = {
+            ...newArr[index],
+            receipt: updated.receipt,
+            panValidation: updated.panValidation,
+            saved: true
+          };
+          return newArr;
+        });
+      } catch (err: any) {
+        toast.error(err.response?.data?.error || 'Failed to save receipt');
+      }
     },
-    [receipt]
+    [results, updateMutation]
   );
+
+  // Check if all receipts are saved
+  useEffect(() => {
+    if (state === 'review' && results.length > 0) {
+      if (results.every(r => r.saved)) {
+        setState('success');
+      }
+    }
+  }, [results, state]);
 
   const handleUploadAnother = useCallback(() => {
     setState('idle');
-    setReceipt(null);
-    setPanValidation(null);
-    setPreviewUrl('');
+    setResults([]);
+    setProcessingProgress({ current: 0, total: 0 });
   }, []);
 
   return (
@@ -84,49 +144,52 @@ export default function Upload() {
               Sales Invoice
             </button>
           </div>
-          <FileDropzone onFileSelect={handleFileSelect} isUploading={false} />
+          <FileDropzone onFilesSelect={handleFilesSelect} isUploading={false} multiple={true} />
         </>
       )}
 
       {/* Step 2: Processing */}
       {state === 'processing' && (
         <div className="upload-page__review">
-          <div className="upload-page__image-panel">
-            {previewUrl && (
-              <img
-                className="upload-page__image"
-                src={previewUrl}
-                alt="Uploaded receipt"
-              />
-            )}
+          <div className="upload-page__image-panel" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-lg)' }}>
+             <LoadingSpinner size="lg" />
+             <h3 style={{ marginTop: 'var(--space-4)' }}>Processing Receipt {processingProgress.current} of {processingProgress.total}</h3>
+             <p style={{ color: 'var(--text-secondary)' }}>Please wait while Kaji extracts the data...</p>
           </div>
           <div>
-            <FileDropzone onFileSelect={() => {}} isUploading={true} />
+            <FileDropzone onFilesSelect={() => {}} isUploading={true} />
           </div>
         </div>
       )}
 
       {/* Step 3: Review extracted data */}
-      {state === 'review' && receipt && (
-        <div className="upload-page__review">
-          <div className="upload-page__image-panel">
-            <img
-              className="upload-page__image"
-              src={`/uploads/${receipt.imagePath}`}
-              alt="Receipt"
-              onError={(e) => {
-                if (previewUrl) {
-                  (e.target as HTMLImageElement).src = previewUrl;
-                }
-              }}
-            />
-          </div>
-          <ReceiptForm
-            receipt={receipt}
-            onSave={handleSave}
-            panValidation={panValidation}
-            isNew={true}
-          />
+      {state === 'review' && results.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-12)' }}>
+          {results.map((result, idx) => {
+            if (result.saved) return null; // Hide saved ones
+            return (
+              <div key={result.receipt._id} className="upload-page__review">
+                <div className="upload-page__image-panel">
+                  <img
+                    className="upload-page__image"
+                    src={`/uploads/${result.receipt.imagePath}`}
+                    alt="Receipt"
+                    onError={(e) => {
+                      if (result.previewUrl) {
+                        (e.target as HTMLImageElement).src = result.previewUrl;
+                      }
+                    }}
+                  />
+                </div>
+                <ReceiptForm
+                  receipt={result.receipt}
+                  onSave={(data) => handleSave(idx, data)}
+                  panValidation={result.panValidation}
+                  isNew={true}
+                />
+              </div>
+            );
+          })}
         </div>
       )}
 

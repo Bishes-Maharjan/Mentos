@@ -4,8 +4,12 @@ const path = require("path");
 const Receipt = require("../models/Receipt");
 const { processReceipt } = require("../services/geminiService");
 const { validatePAN } = require("../services/panValidator");
+const { auth } = require("../middleware/auth");
+const { estimateBSFromAD, parseBSDate } = require("../utils/dateUtils");
 
 const router = express.Router();
+
+
 
 // --- Multer config: store images in /uploads with original extension ---
 const storage = multer.diskStorage({
@@ -37,7 +41,7 @@ const upload = multer({
 // ============================================================
 // POST /api/receipts/upload — Upload receipt image & extract data
 // ============================================================
-router.post("/upload", upload.single("receipt"), async (req, res) => {
+router.post("/upload", auth, upload.single("receipt"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "No image file uploaded" });
@@ -49,12 +53,22 @@ router.post("/upload", upload.single("receipt"), async (req, res) => {
     // Run two-step Gemini extraction
     const { rawText, structured } = await processReceipt(imagePath);
 
-    // Map Gemini's snake_case output to our Mongoose schema
+    // Extract date_bs and determine fiscalYear / nepaliMonth
+    let dateBS = structured.date_bs || "";
+    const parsedDate = structured.date ? new Date(structured.date) : null;
+    if (!dateBS && parsedDate) {
+      dateBS = estimateBSFromAD(parsedDate);
+    }
+    const { fiscalYear, nepaliMonth } = parseBSDate(dateBS);
+
+    // Map Gemini output to our Mongoose schema
     const receiptData = {
-      vendorName: structured.vendor_name || "",
-      vendorPAN: structured.vendor_pan || null,
+      userId: req.user._id,
+      partyName: structured.party_name || "",
+      partyPAN: structured.party_pan || null,
       invoiceNumber: structured.invoice_number || null,
-      date: structured.date ? new Date(structured.date) : null,
+      date: parsedDate,
+      dateBS,
       items: (structured.items || []).map((item) => ({
         description: item.description || "",
         quantity: item.quantity || 1,
@@ -66,15 +80,19 @@ router.post("/upload", upload.single("receipt"), async (req, res) => {
       vatAmount: structured.vat_amount || 0,
       total: structured.total || 0,
       type: receiptType,
+      transactionType: structured.transaction_type || "domestic",
+      fiscalYear: fiscalYear || "",
+      nepaliMonth: nepaliMonth || null,
       confidence: structured.confidence || "low",
+      notes: structured.notes || [],
       imagePath: req.file.filename, // store just the filename, not full path
       rawText,
     };
 
     // PAN validation if extracted
     let panValidation = null;
-    if (receiptData.vendorPAN) {
-      panValidation = validatePAN(receiptData.vendorPAN);
+    if (receiptData.partyPAN) {
+      panValidation = validatePAN(receiptData.partyPAN);
     }
 
     // Save to MongoDB
@@ -98,17 +116,16 @@ router.post("/upload", upload.single("receipt"), async (req, res) => {
 // ============================================================
 // GET /api/receipts — List all receipts (with optional filters)
 // ============================================================
-router.get("/", async (req, res) => {
+router.get("/", auth, async (req, res) => {
   try {
     const { type, month, year, limit = 50, page = 1 } = req.query;
-    const filter = {};
+    const filter = { userId: req.user._id };
 
     if (type) filter.type = type;
 
     if (month && year) {
-      const startDate = new Date(year, month - 1, 1);
-      const endDate = new Date(year, month, 0, 23, 59, 59, 999);
-      filter.date = { $gte: startDate, $lte: endDate };
+      const prefix = `${year}-${String(month).padStart(2, "0")}`;
+      filter.dateBS = { $regex: `^${prefix}` };
     }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -136,9 +153,9 @@ router.get("/", async (req, res) => {
 // ============================================================
 // GET /api/receipts/:id — Get single receipt by ID
 // ============================================================
-router.get("/:id", async (req, res) => {
+router.get("/:id", auth, async (req, res) => {
   try {
-    const receipt = await Receipt.findById(req.params.id);
+    const receipt = await Receipt.findOne({ _id: req.params.id, userId: req.user._id });
     if (!receipt) {
       return res.status(404).json({ error: "Receipt not found" });
     }
@@ -151,19 +168,24 @@ router.get("/:id", async (req, res) => {
 // ============================================================
 // PUT /api/receipts/:id — Update/correct extracted receipt data
 // ============================================================
-router.put("/:id", async (req, res) => {
+router.put("/:id", auth, async (req, res) => {
   try {
     const allowedFields = [
-      "vendorName",
-      "vendorPAN",
+      "partyName",
+      "partyPAN",
       "invoiceNumber",
       "date",
+      "dateBS",
       "items",
       "subtotal",
       "vatAmount",
       "total",
       "type",
+      "transactionType",
       "confidence",
+      "notes",
+      "fiscalYear",
+      "nepaliMonth",
     ];
 
     const updates = {};
@@ -173,14 +195,29 @@ router.put("/:id", async (req, res) => {
       }
     }
 
-    // Re-validate PAN if it was updated
-    let panValidation = null;
-    if (updates.vendorPAN) {
-      panValidation = validatePAN(updates.vendorPAN);
+    // Recalculate fiscalYear and nepaliMonth if dateBS changes
+    if (updates.dateBS) {
+      const { fiscalYear, nepaliMonth } = parseBSDate(updates.dateBS);
+      updates.fiscalYear = fiscalYear;
+      updates.nepaliMonth = nepaliMonth;
+    } else if (updates.date && !updates.dateBS) {
+      const estimatedBS = estimateBSFromAD(updates.date);
+      if (estimatedBS) {
+        updates.dateBS = estimatedBS;
+        const { fiscalYear, nepaliMonth } = parseBSDate(estimatedBS);
+        updates.fiscalYear = fiscalYear;
+        updates.nepaliMonth = nepaliMonth;
+      }
     }
 
-    const receipt = await Receipt.findByIdAndUpdate(
-      req.params.id,
+    // Re-validate PAN if it was updated
+    let panValidation = null;
+    if (updates.partyPAN) {
+      panValidation = validatePAN(updates.partyPAN);
+    }
+
+    const receipt = await Receipt.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user._id },
       { $set: updates },
       { new: true, runValidators: true }
     );
@@ -198,9 +235,9 @@ router.put("/:id", async (req, res) => {
 // ============================================================
 // DELETE /api/receipts/:id — Delete a receipt
 // ============================================================
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", auth, async (req, res) => {
   try {
-    const receipt = await Receipt.findByIdAndDelete(req.params.id);
+    const receipt = await Receipt.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
     if (!receipt) {
       return res.status(404).json({ error: "Receipt not found" });
     }
@@ -213,14 +250,14 @@ router.delete("/:id", async (req, res) => {
 // ============================================================
 // POST /api/receipts/:id/validate-pan — Validate PAN for a receipt
 // ============================================================
-router.post("/:id/validate-pan", async (req, res) => {
+router.post("/:id/validate-pan", auth, async (req, res) => {
   try {
-    const receipt = await Receipt.findById(req.params.id);
+    const receipt = await Receipt.findOne({ _id: req.params.id, userId: req.user._id });
     if (!receipt) {
       return res.status(404).json({ error: "Receipt not found" });
     }
 
-    const pan = req.body.pan || receipt.vendorPAN;
+    const pan = req.body.pan || receipt.partyPAN;
     const validation = validatePAN(pan);
 
     res.json({ pan, validation });

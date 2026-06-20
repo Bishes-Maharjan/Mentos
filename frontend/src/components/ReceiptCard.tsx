@@ -9,13 +9,7 @@ interface ReceiptCardProps {
 }
 
 export default function ReceiptCard({ receipt, onClick }: ReceiptCardProps) {
-  const dateStr = receipt.date
-    ? new Date(receipt.date).toLocaleDateString('en-GB', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-      })
-    : 'No date';
+  const dateStr = receipt.dateBS || 'No date';
 
   return (
     <div className="receipt-card" onClick={onClick}>
@@ -23,7 +17,7 @@ export default function ReceiptCard({ receipt, onClick }: ReceiptCardProps) {
         <img
           className="receipt-card__thumb"
           src={`/uploads/${receipt.imagePath}`}
-          alt={receipt.vendorName}
+          alt={receipt.partyName}
           onError={(e) => {
             (e.target as HTMLImageElement).style.display = 'none';
             (e.target as HTMLImageElement).nextElementSibling?.removeAttribute('style');
@@ -39,7 +33,7 @@ export default function ReceiptCard({ receipt, onClick }: ReceiptCardProps) {
 
       <div className="receipt-card__info">
         <div className="receipt-card__vendor">
-          {receipt.vendorName || 'Unknown Vendor'}
+          {receipt.partyName || 'Unknown Counterparty'}
         </div>
         <div className="receipt-card__meta">
           <span>{receipt.invoiceNumber || '—'}</span>

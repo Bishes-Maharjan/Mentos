@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Plus, Trash2, Save } from 'lucide-react';
+import { Plus, Trash2, Save, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import type { Receipt, ReceiptItem, PANValidation } from '../types';
 import ConfidenceBadge from './ConfidenceBadge';
@@ -18,12 +18,10 @@ export default function ReceiptForm({
   panValidation,
   isNew = false,
 }: ReceiptFormProps) {
-  const [vendorName, setVendorName] = useState(receipt.vendorName || '');
-  const [vendorPAN, setVendorPAN] = useState(receipt.vendorPAN || '');
+  const [partyName, setPartyName] = useState(receipt.partyName || '');
+  const [partyPAN, setPartyPAN] = useState(receipt.partyPAN || '');
   const [invoiceNumber, setInvoiceNumber] = useState(receipt.invoiceNumber || '');
-  const [date, setDate] = useState(
-    receipt.date ? new Date(receipt.date).toISOString().split('T')[0] : ''
-  );
+  const [dateBS, setDateBS] = useState(receipt.dateBS || '');
   const [type, setType] = useState<'sale' | 'purchase'>(receipt.type);
   const [items, setItems] = useState<ReceiptItem[]>(
     receipt.items.length > 0
@@ -66,10 +64,10 @@ export default function ReceiptForm({
     setSaving(true);
     try {
       await onSave({
-        vendorName,
-        vendorPAN: vendorPAN || null,
+        partyName,
+        partyPAN: partyPAN || null,
         invoiceNumber: invoiceNumber || null,
-        date: date || null,
+        dateBS: dateBS || null,
         type,
         items,
         subtotal,
@@ -83,7 +81,7 @@ export default function ReceiptForm({
     } finally {
       setSaving(false);
     }
-  }, [vendorName, vendorPAN, invoiceNumber, date, type, items, subtotal, vatAmount, total, onSave, isNew]);
+  }, [partyName, partyPAN, invoiceNumber, dateBS, type, items, subtotal, vatAmount, total, onSave, isNew]);
 
   return (
     <div className="card card--glass">
@@ -95,26 +93,46 @@ export default function ReceiptForm({
           <ConfidenceBadge confidence={receipt.confidence} />
         </div>
 
+        {receipt.notes && receipt.notes.length > 0 && (
+          <div style={{
+            background: 'rgba(245, 158, 11, 0.1)',
+            border: '1px solid var(--warning)',
+            padding: 'var(--space-4)',
+            borderRadius: 'var(--radius-md)',
+            marginBottom: 'var(--space-4)'
+          }}>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--warning)', marginBottom: '0.5rem', fontSize: 'var(--font-size-sm)' }}>
+              <AlertTriangle size={18} />
+              Compliance Notes
+            </h3>
+            <ul style={{ margin: 0, paddingLeft: '1.5rem', fontSize: 'var(--font-size-sm)', color: 'var(--text-secondary)' }}>
+              {receipt.notes.map((note, i) => (
+                <li key={i} style={{ marginBottom: '0.25rem' }}>{note}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <div className="receipt-form__grid">
           <div className="receipt-form__field">
-            <label className="receipt-form__label">Vendor Name</label>
+            <label className="receipt-form__label">Counterparty Name</label>
             <input
               type="text"
-              value={vendorName}
-              onChange={(e) => setVendorName(e.target.value)}
+              value={partyName}
+              onChange={(e) => setPartyName(e.target.value)}
               placeholder="Business name"
             />
           </div>
 
           <div className="receipt-form__field">
-            <label className="receipt-form__label">Vendor PAN
+            <label className="receipt-form__label">Counterparty PAN
               <PANBadge validation={panValidation} />
             </label>
             <div className="receipt-form__pan-row">
               <input
                 type="text"
-                value={vendorPAN}
-                onChange={(e) => setVendorPAN(e.target.value)}
+                value={partyPAN}
+                onChange={(e) => setPartyPAN(e.target.value)}
                 placeholder="9-digit PAN"
                 maxLength={9}
               />
@@ -132,11 +150,13 @@ export default function ReceiptForm({
           </div>
 
           <div className="receipt-form__field">
-            <label className="receipt-form__label">Date</label>
+            <label className="receipt-form__label">Date (BS)</label>
             <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
+              type="text"
+              placeholder="YYYY-MM-DD"
+              pattern="\d{4}-\d{2}-\d{2}"
+              value={dateBS}
+              onChange={(e) => setDateBS(e.target.value)}
             />
           </div>
 

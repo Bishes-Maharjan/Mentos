@@ -1,13 +1,26 @@
 import { Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Upload from './pages/Upload';
 import ReceiptDetail from './pages/ReceiptDetail';
 import AnnexSales from './pages/AnnexSales';
 import AnnexPurchases from './pages/AnnexPurchases';
+import TaxReturn from './pages/TaxReturn';
+import AuthPage from './pages/Auth';
 
 export default function App() {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="spinner spinner--lg"></div>
+      </div>
+    );
+  }
+
   return (
     <>
       <Toaster
@@ -28,15 +41,21 @@ export default function App() {
           },
         }}
       />
-      <Routes>
-        <Route element={<Layout />}>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/upload" element={<Upload />} />
-          <Route path="/receipts/:id" element={<ReceiptDetail />} />
-          <Route path="/annex/sales" element={<AnnexSales />} />
-          <Route path="/annex/purchases" element={<AnnexPurchases />} />
-        </Route>
-      </Routes>
+      
+      {!user ? (
+        <AuthPage />
+      ) : (
+        <Routes>
+          <Route element={<Layout />}>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/upload" element={<Upload />} />
+            <Route path="/receipts/:id" element={<ReceiptDetail />} />
+            <Route path="/annex/sales" element={<AnnexSales />} />
+            <Route path="/annex/purchases" element={<AnnexPurchases />} />
+            <Route path="/tax-return" element={<TaxReturn />} />
+          </Route>
+        </Routes>
+      )}
     </>
   );
 }

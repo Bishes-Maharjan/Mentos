@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getReceipt, updateReceipt, deleteReceipt } from '../api/client';
 import type { Receipt, PANValidation } from '../types';
 import ReceiptForm from '../components/ReceiptForm';
@@ -11,48 +12,59 @@ export default function ReceiptDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [receipt, setReceipt] = useState<Receipt | null>(null);
-  const [panValidation, setPanValidation] = useState<PANValidation | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [deleting, setDeleting] = useState(false);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (!id) return;
-    setLoading(true);
-    getReceipt(id)
-      .then((data) => setReceipt(data))
-      .catch(() => toast.error('Failed to load receipt'))
-      .finally(() => setLoading(false));
-  }, [id]);
+  const [panValidation, setPanValidation] = useState<PANValidation | null>(null);
+
+  const { data: receipt, isLoading } = useQuery({
+    queryKey: ['receipt', id],
+    queryFn: () => getReceipt(id!),
+    enabled: !!id,
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (data: Partial<Receipt>) => updateReceipt(id!, data),
+    onSuccess: (result) => {
+      queryClient.setQueryData(['receipt', id], result.receipt);
+      setPanValidation(result.panValidation);
+      queryClient.invalidateQueries({ queryKey: ['receipts'] });
+      queryClient.invalidateQueries({ queryKey: ['vatSummary'] });
+    },
+    onError: () => {
+      toast.error('Failed to update receipt');
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => deleteReceipt(id!),
+    onSuccess: () => {
+      toast.success('Receipt deleted');
+      queryClient.invalidateQueries({ queryKey: ['receipts'] });
+      queryClient.invalidateQueries({ queryKey: ['vatSummary'] });
+      navigate('/');
+    },
+    onError: () => {
+      toast.error('Failed to delete receipt');
+    }
+  });
 
   const handleSave = useCallback(
     async (data: Partial<Receipt>) => {
       if (!id) return;
-      const result = await updateReceipt(id, data);
-      setReceipt(result.receipt);
-      setPanValidation(result.panValidation);
+      await updateMutation.mutateAsync(data);
     },
-    [id]
+    [id, updateMutation]
   );
 
-  const handleDelete = useCallback(async () => {
+  const handleDelete = useCallback(() => {
     if (!id) return;
     if (!window.confirm('Are you sure you want to delete this receipt? This action cannot be undone.')) {
       return;
     }
-    setDeleting(true);
-    try {
-      await deleteReceipt(id);
-      toast.success('Receipt deleted');
-      navigate('/');
-    } catch {
-      toast.error('Failed to delete receipt');
-    } finally {
-      setDeleting(false);
-    }
-  }, [id, navigate]);
+    deleteMutation.mutate();
+  }, [id, deleteMutation]);
 
-  if (loading) return <LoadingSpinner size="lg" />;
+  if (isLoading) return <LoadingSpinner size="lg" />;
   if (!receipt) return <div>Receipt not found</div>;
 
   return (
@@ -65,10 +77,10 @@ export default function ReceiptDetail() {
         <button
           className="btn btn--danger"
           onClick={handleDelete}
-          disabled={deleting}
+          disabled={deleteMutation.isPending}
         >
           <Trash2 size={16} />
-          {deleting ? 'Deleting...' : 'Delete'}
+          {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
         </button>
       </div>
 
@@ -78,7 +90,7 @@ export default function ReceiptDetail() {
             <img
               className="receipt-detail__image"
               src={`/uploads/${receipt.imagePath}`}
-              alt={receipt.vendorName || 'Receipt'}
+              alt={receipt.partyName || 'Receipt'}
             />
           ) : (
             <div

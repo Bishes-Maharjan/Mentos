@@ -4,18 +4,20 @@ import toast from 'react-hot-toast';
 import LoadingSpinner from './LoadingSpinner';
 
 interface FileDropzoneProps {
-  onFileSelect: (file: File) => void;
+  onFilesSelect: (files: File[]) => void;
   isUploading: boolean;
   accept?: string;
+  multiple?: boolean;
 }
 
 const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
 const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp'];
 
 export default function FileDropzone({
-  onFileSelect,
+  onFilesSelect,
   isUploading,
   accept = 'image/jpeg,image/png,image/webp',
+  multiple = false,
 }: FileDropzoneProps) {
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -33,13 +35,23 @@ export default function FileDropzone({
     return true;
   }, []);
 
-  const handleFile = useCallback(
-    (file: File) => {
-      if (validateFile(file)) {
-        onFileSelect(file);
+  const handleFiles = useCallback(
+    (files: FileList | File[]) => {
+      const validFiles: File[] = [];
+      const filesToProcess = multiple ? Array.from(files) : [files[0]];
+
+      for (const file of filesToProcess) {
+        if (!file) continue;
+        if (validateFile(file)) {
+          validFiles.push(file);
+        }
+      }
+
+      if (validFiles.length > 0) {
+        onFilesSelect(validFiles);
       }
     },
-    [validateFile, onFileSelect]
+    [validateFile, onFilesSelect, multiple]
   );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -64,10 +76,10 @@ export default function FileDropzone({
 
       const files = e.dataTransfer.files;
       if (files.length > 0) {
-        handleFile(files[0]);
+        handleFiles(files);
       }
     },
-    [isUploading, handleFile]
+    [isUploading, handleFiles]
   );
 
   const handleClick = useCallback(() => {
@@ -80,12 +92,12 @@ export default function FileDropzone({
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
       if (files && files.length > 0) {
-        handleFile(files[0]);
+        handleFiles(files);
       }
       // Reset input so the same file can be re-selected
       e.target.value = '';
     },
-    [handleFile]
+    [handleFiles]
   );
 
   const classes = [
@@ -108,6 +120,7 @@ export default function FileDropzone({
         ref={inputRef}
         type="file"
         accept={accept}
+        multiple={multiple}
         hidden
         onChange={handleInputChange}
       />
