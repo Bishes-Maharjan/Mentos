@@ -12,8 +12,8 @@ const bsMonthNames = [
 ];
 
 // Generate reasonable BS fiscal years (e.g. 2078/79 → 2082/83)
-const currentBsYear = 2081;
-const fiscalYearOptions = Array.from({ length: 6 }, (_, i) => {
+const currentBsYear = 2078;
+const fiscalYearOptions = Array.from({ length: 9 }, (_, i) => {
   const start = currentBsYear - 2 + i;
   const end = (start + 1) % 100;
   return `${start}/${String(end).padStart(2, '0')}`;
@@ -200,8 +200,8 @@ export default function TaxReturn() {
                   const monthName = doc.month >= 1 && doc.month <= 12 ? bsMonthNames[doc.month - 1] : String(doc.month);
                   return (
                     <React.Fragment key={doc._id}>
-                      <tr 
-                        onClick={() => setExpandedRow(prev => prev === doc._id ? null : doc._id)} 
+                      <tr
+                        onClick={() => setExpandedRow(prev => prev === doc._id ? null : doc._id)}
                         style={{ cursor: 'pointer' }}
                         className="d2-row-hover"
                       >
