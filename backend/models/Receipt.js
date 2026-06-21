@@ -59,6 +59,9 @@ const receiptSchema = new mongoose.Schema(
 // receiptSchema.index({ invoiceNumber: 1, userId: 1 }, { unique: true, sparse: true });
 
 receiptSchema.virtual("taxableAmount").get(function () {
+  // If the transaction is an export, the VAT-able goods become zero-rated exports.
+  if (this.transactionType === "export") return 0;
+  
   return this.items
     .filter((item) => item.vatApplicable)
     .reduce((sum, item) => sum + item.amount, 0);
@@ -66,13 +69,19 @@ receiptSchema.virtual("taxableAmount").get(function () {
 
 // Virtual: compute exempt amount (sum of items where VAT is NOT applicable)
 receiptSchema.virtual("exemptAmount").get(function () {
+  // Exempt goods remain exempt regardless of whether they are exported or sold domestically
   return this.items
     .filter((item) => !item.vatApplicable)
     .reduce((sum, item) => sum + item.amount, 0);
 });
 
 receiptSchema.virtual("exportAmount").get(function () {
-  return this.transactionType === "export" ? this.subtotal : 0;
+  // Only the VAT-able goods qualify for Zero-Rated Export status.
+  if (this.transactionType !== "export") return 0;
+  
+  return this.items
+    .filter((item) => item.vatApplicable)
+    .reduce((sum, item) => sum + item.amount, 0);
 });
 
 // Ensure virtuals are included in JSON output
